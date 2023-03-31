@@ -75,7 +75,7 @@ export class Router {
   }
 
   /**
-   * @return {Map<string, Array<workbox-routing.Route>>} routes A `Map` of HTTP
+   * @return {Map<string, Array<Route>>} routes A `Map` of HTTP
    * method name ('GET', etc.) to an array of all the corresponding `Route`
    * instances that are registered.
    */
@@ -177,20 +177,11 @@ export class Router {
     request: Request;
     event: ExtendableEvent;
   }): Promise<Response> | undefined {
-    // if (process.env.NODE_ENV !== 'production') {
-    //   assert!.isInstance(request, Request, {
-    //     moduleName: 'workbox-routing',
-    //     className: 'Router',
-    //     funcName: 'handleRequest',
-    //     paramName: 'options.request',
-    //   });
-    // }
-
     const url = new URL(request.url, location.href);
     // if (!url.protocol.startsWith('http')) {
     //   if (process.env.NODE_ENV !== 'production') {
     //     logger.debug(
-    //       `Workbox Router only supports URLs that start with 'http'.`,
+    //       `Router only supports URLs that start with 'http'.`,
     //     );
     //   }
     //   return;
@@ -234,7 +225,7 @@ export class Router {
 
     // if (!handler) {
     //   if (process.env.NODE_ENV !== 'production') {
-    //     // No handler so Workbox will do nothing. If logs is set of debug
+    //     // No handler so we would do nothing. If logs is set of debug
     //     // i.e. verbose, we should print out this information.
     //     logger.debug(`No route found for: ${getFriendlyURL(url)}`);
     //   }
@@ -242,7 +233,7 @@ export class Router {
     // }
 
     // if (process.env.NODE_ENV !== 'production') {
-    //   // We have a handler, meaning Workbox is going to handle the route.
+    //   // We have a handler, meaning we is going to handle the route.
     //   // print the routing details to the console.
     //   logger.groupCollapsed(`Router is responding to: ${getFriendlyURL(url)}`);
 
@@ -382,7 +373,6 @@ export class Router {
         } else if (typeof matchResult === "boolean") {
           // For the boolean value true (rather than just something truth-y),
           // don't set params.
-          // See https://github.com/GoogleChrome/workbox/pull/2134#issuecomment-513924353
           params = undefined;
         }
 
@@ -403,7 +393,7 @@ export class Router {
    * Without a default handler, unmatched requests will go against the
    * network as if there were no service worker present.
    *
-   * @param {workbox-routing~handlerCallback} handler A callback
+   * @param {RouteHandler_} handler A callback
    * function that returns a Promise resulting in a Response.
    * @param {string} [method='GET'] The HTTP method to associate with this
    * default handler. Each method has its own default.
@@ -419,7 +409,7 @@ export class Router {
    * If a Route throws an error while handling a request, this `handler`
    * will be called and given a chance to provide a response.
    *
-   * @param {workbox-routing~handlerCallback} handler A callback
+   * @param {RouteHandler_} handler A callback
    * function that returns a Promise resulting in a Response.
    */
   setCatchHandler(handler: RouteHandler_): void {
@@ -429,7 +419,7 @@ export class Router {
   /**
    * Registers a route with the router.
    *
-   * @param {workbox-routing.Route} route The route to register.
+   * @param {Route} route The route to register.
    */
   registerRoute(route: Route): void {
     if (!this._routes.has(route.method)) {
@@ -444,7 +434,7 @@ export class Router {
   /**
    * Unregisters a route with the router.
    *
-   * @param {workbox-routing.Route} route The route to unregister.
+   * @param {Route} route The route to unregister.
    */
   unregisterRoute(route: Route): void {
     if (!this._routes.has(route.method)) {
@@ -467,19 +457,16 @@ export class Router {
  * Easily register a RegExp, string, or function with a caching
  * strategy to a singleton Router instance.
  *
- * This method will generate a Route for you if needed and
- * call {@link workbox-routing.Router#registerRoute}.
+ * This method will generate a Route for you if needed.
  *
- * @param {RegExp|string|workbox-routing.Route~matchCallback|workbox-routing.Route} capture
+ * @param {RegExp|string|RouteMatchCallback|Route} capture
  * If the capture param is a `Route`, all other arguments will be ignored.
- * @param {workbox-routing~handlerCallback} [handler] A callback
+ * @param {RouteHandler_} [handler] A callback
  * function that returns a Promise resulting in a Response. This parameter
  * is required if `capture` is not a `Route` object.
  * @param {string} [method='GET'] The HTTP method to match the Route
  * against.
- * @return {workbox-routing.Route} The generated `Route`.
- *
- * @memberof workbox-routing
+ * @return {Route} The generated `Route`.
  */
 export function registerRoute(
   capture: RegExp | string | RouteMatchCallback | Route,

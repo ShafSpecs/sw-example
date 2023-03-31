@@ -30,7 +30,7 @@ declare let self: ServiceWorkerGlobalScope;
 export function loadServiceWorker(
   options: LoadServiceWorkerOptions = {
     scope: "/",
-    serviceWorkerUrl: "/entry.worker.js"
+    serviceWorkerUrl: "/entry.worker.js",
   }
 ) {
   if ("serviceWorker" in navigator) {
@@ -71,7 +71,8 @@ export function loadServiceWorker(
             });
           })
           .then(() => {
-            logger.debug("Syncing...");
+            // (ShafSpecs) Is adding this debug too much?
+            // logger.debug("Syncing manifest...");
 
             if (navigator.serviceWorker.controller) {
               navigator.serviceWorker.controller.postMessage({
@@ -82,7 +83,8 @@ export function loadServiceWorker(
               navigator.serviceWorker.addEventListener(
                 "controllerchange",
                 () => {
-                  logger.debug("Syncing...");
+                  // (ShafSpecs) Is adding this debug too much?
+                  // logger.debug("Syncing manifest...");
 
                   navigator.serviceWorker.controller?.postMessage({
                     type: "SYNC_REMIX_MANIFEST",
@@ -92,11 +94,12 @@ export function loadServiceWorker(
               );
             }
           })
-          .then(() =>
-            logger.log(
-              "Service worker registered",
-              navigator.serviceWorker.controller
-            )
+          .then(
+            () => null
+            // logger.debug(
+            //   "Service worker registered",
+            //   navigator.serviceWorker.controller
+            // )
           );
       } catch (error) {
         logger.error("Service worker registration failed", error);

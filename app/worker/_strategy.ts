@@ -4,18 +4,9 @@
  */
 
 import { Deferred, cacheMatchIgnoreParams, timeout, toRequest } from "./_private";
-import { Strategy } from "./strategy";
-import { CustomMapObject, HandlerCallbackOptions, Plugin, PluginCallbackParam } from "./types";
+import type { Strategy } from "./strategy";
+import type { CustomMapObject, HandlerCallbackOptions, Plugin, PluginCallbackParam } from "./types";
 
-/**
- * A class created every time a Strategy instance instance calls
- * {@link workbox-strategies.Strategy~handle} or
- * {@link workbox-strategies.Strategy~handleAll} that wraps all fetch and
- * cache actions around plugin callbacks and keeps track of when the strategy
- * is "done" (i.e. all added `event.waitUntil()` promises have resolved).
- *
- * @memberof workbox-strategies
- */
 export class StrategyHandler {
   public request!: Request;
   public url?: URL;
@@ -37,14 +28,12 @@ export class StrategyHandler {
    * The constructor also initializes the state that will be passed to each of
    * the plugins handling this request.
    *
-   * @param {workbox-strategies.Strategy} strategy
+   * @param {Strategy} strategy
    * @param {Object} options
    * @param {Request|string} options.request A request to run this strategy for.
    * @param {ExtendableEvent} options.event The event associated with the
    *     request.
    * @param {URL} [options.url]
-   * @param {*} [options.params] The return value from the
-   *     {@link workbox-routing~matchCallback} (if applicable).
    */
   constructor(strategy: Strategy, options: HandlerCallbackOptions) {
     /**
@@ -53,37 +42,34 @@ export class StrategyHandler {
      * @name request
      * @instance
      * @type {Request}
-     * @memberof workbox-strategies.StrategyHandler
      */
     /**
      * The event associated with this request.
      * @name event
      * @instance
      * @type {ExtendableEvent}
-     * @memberof workbox-strategies.StrategyHandler
      */
     /**
      * A `URL` instance of `request.url` (if passed to the strategy's
      * `handle()` or `handleAll()` method).
      * Note: the `url` param will be present if the strategy was invoked
-     * from a workbox `Route` object.
+     * from a `Route` object.
      * @name url
      * @instance
      * @type {URL|undefined}
-     * @memberof workbox-strategies.StrategyHandler
      */
     /**
      * A `param` value (if passed to the strategy's
      * `handle()` or `handleAll()` method).
      * Note: the `param` param will be present if the strategy was invoked
-     * from a workbox `Route` object and the
-     * {@link workbox-routing~matchCallback} returned
+     * from a `Route` object and the
+     * `matchCallback returned
      * a truthy value (it will be that value).
      * @name params
      * @instance
      * @type {*|undefined}
-     * @memberof workbox-strategies.StrategyHandler
      */
+    // (ShafSpecs) Copied Workbox assertions from `workbox-core` for creating mock tests
     // if (process.env.NODE_ENV !== 'production') {
     //   assert!.isInstance(options.event, ExtendableEvent, {
     //     moduleName: 'workbox-strategies',
@@ -161,9 +147,6 @@ export class StrategyHandler {
     } catch (err) {
       if (err instanceof Error) {
         throw new Error("plugin-error-request-will-fetch");
-        // throw new WorkboxError('plugin-error-request-will-fetch', {
-        //   thrownErrorMessage: err.message,
-        // });
       }
     }
 
@@ -174,20 +157,10 @@ export class StrategyHandler {
 
     try {
       let fetchResponse: Response;
-
-      // See https://github.com/GoogleChrome/workbox/issues/1796
       fetchResponse = await fetch(
         request,
         request.mode === 'navigate' ? undefined : this._strategy.fetchOptions,
       );
-
-      // if (process.env.NODE_ENV !== 'production') {
-      //   logger.debug(
-      //     `Network request for ` +
-      //       `'${getFriendlyURL(request.url)}' returned a response with ` +
-      //       `status '${fetchResponse.status}'.`,
-      //   );
-      // }
 
       for (const callback of this.iterateCallbacks('fetchDidSucceed')) {
         fetchResponse = await callback({
@@ -198,14 +171,6 @@ export class StrategyHandler {
       }
       return fetchResponse;
     } catch (error) {
-      // if (process.env.NODE_ENV !== 'production') {
-      //   logger.log(
-      //     `Network request for ` +
-      //       `'${getFriendlyURL(request.url)}' threw an error.`,
-      //     error,
-      //   );
-      // }
-
       // `originalRequest` will only exist if a `fetchDidFail` callback
       // is being used (see above).
       if (originalRequest) {
@@ -282,6 +247,8 @@ export class StrategyHandler {
     return cachedResponse;
   }
 
+  // Copied from Workbox --- _todo!(ShafSpecs): remove this once we have a
+  // more concrete solution
   /**
    * Puts a request/response pair in the cache (and invokes any applicable
    * plugin callback methods) using the `cacheName` and `plugins` defined on
@@ -333,36 +300,11 @@ export class StrategyHandler {
     if (process.env.NODE_ENV !== 'production') {
       if (effectiveRequest.method && effectiveRequest.method !== 'GET') {
         throw new Error("attempt-to-cache-non-get-req")
-        // throw new WorkboxError('attempt-to-cache-non-get-request', {
-        //   url: getFriendlyURL(effectiveRequest.url),
-        //   method: effectiveRequest.method,
-        // });
       }
-
-      // See https://github.com/GoogleChrome/workbox/issues/2818
-      // const vary = response.headers.get('Vary');
-      // if (vary) {
-      //   logger.debug(
-      //     `The response for ${getFriendlyURL(effectiveRequest.url)} ` +
-      //       `has a 'Vary: ${vary}' header. ` +
-      //       `Consider setting the {ignoreVary: true} option on your strategy ` +
-      //       `to ensure cache matching and deletion works as expected.`,
-      //   );
-      // }
     }
 
     if (!response) {
-      // if (process.env.NODE_ENV !== 'production') {
-      //   logger.error(
-      //     `Cannot cache non-existent response for ` +
-      //       `'${getFriendlyURL(effectiveRequest.url)}'.`,
-      //   );
-      // }
-
       throw new Error("cache-put-with-no-res")
-      // throw new WorkboxError('cache-put-with-no-response', {
-      //   url: getFriendlyURL(effectiveRequest.url),
-      // });
     }
 
     const responseToCache = await this._ensureResponseSafeToCache(response);
@@ -370,7 +312,7 @@ export class StrategyHandler {
     if (!responseToCache) {
       // if (process.env.NODE_ENV !== 'production') {
       //   logger.debug(
-      //     `Response '${getFriendlyURL(effectiveRequest.url)}' ` +
+      //     `Response '(effectiveRequest.url)' ` +
       //       `will not be cached.`,
       //     responseToCache,
       //   );
@@ -393,13 +335,6 @@ export class StrategyHandler {
           matchOptions,
         )
       : null;
-
-    // if (process.env.NODE_ENV !== 'production') {
-    //   logger.debug(
-    //     `Updating the '${cacheName}' cache with a new Response ` +
-    //       `for ${getFriendlyURL(effectiveRequest.url)}.`,
-    //   );
-    // }
 
     try {
       await cache.put(
@@ -489,9 +424,7 @@ export class StrategyHandler {
    *
    * Note: since this method runs all plugins, it's not suitable for cases
    * where the return value of a callback needs to be applied prior to calling
-   * the next callback. See
-   * {@link workbox-strategies.StrategyHandler#iterateCallbacks}
-   * below for how to handle that case.
+   * the next callback.
    *
    * @param {string} name The name of the callback to run within each plugin.
    * @param {Object} param The object to pass as the first (and only) param
@@ -540,13 +473,10 @@ export class StrategyHandler {
 
   /**
    * Adds a promise to the
-   * [extend lifetime promises]{@link https://w3c.github.io/ServiceWorker/#extendableevent-extend-lifetime-promises}
+   * [extend lifetime promises]({@link https://w3c.github.io/ServiceWorker/#extendableevent-extend-lifetime-promises})
    * of the event event associated with the request being handled (usually a
-   * `FetchEvent`).
-   *
-   * Note: you can await
-   * {@link workbox-strategies.StrategyHandler~doneWaiting}
-   * to know when all added promises have settled.
+   * `FetchEvent`). This ensures the service worker doesn't exit while work
+   * is still being done.
    *
    * @param {Promise} promise A promise to add to the extend lifetime promises
    *     of the event that triggered the request.
@@ -558,7 +488,7 @@ export class StrategyHandler {
 
   /**
    * Returns a promise that resolves once all promises passed to
-   * {@link workbox-strategies.StrategyHandler~waitUntil}
+   * {@link waitUntil}
    * have settled.
    *
    * Note: any work done after `doneWaiting()` settles should be manually
@@ -615,25 +545,6 @@ export class StrategyHandler {
       if (responseToCache && responseToCache.status !== 200) {
         responseToCache = undefined;
       }
-      // if (process.env.NODE_ENV !== 'production') {
-      //   if (responseToCache) {
-      //     if (responseToCache.status !== 200) {
-      //       if (responseToCache.status === 0) {
-      //         logger.warn(
-      //           `The response for '${this.request.url}' ` +
-      //             `is an opaque response. The caching strategy that you're ` +
-      //             `using will not cache opaque responses by default.`,
-      //         );
-      //       } else {
-      //         logger.debug(
-      //           `The response for '${this.request.url}' ` +
-      //             `returned a status code of '${response.status}' and won't ` +
-      //             `be cached as a result.`,
-      //         );
-      //       }
-      //     }
-      //   }
-      // }
     }
 
     return responseToCache;

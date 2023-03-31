@@ -5,7 +5,7 @@
  */
 
 import { StrategyHandler } from "./_strategy";
-import { HandlerCallbackOptions, Plugin, RouteHandlerCallbackObject, StrategyOptions } from "./types";
+import type { HandlerCallbackOptions, Plugin, RouteHandlerCallbackObject, StrategyOptions } from "./types";
 
 export abstract class Strategy implements RouteHandlerCallbackObject {
   cacheName: string;
@@ -28,14 +28,11 @@ export abstract class Strategy implements RouteHandlerCallbackObject {
    *
    * @param {Object} [options]
    * @param {string} [options.cacheName] Cache name to store and retrieve
-   * requests. Defaults to the cache names provided by
-   * {@link workbox-core.cacheNames}.
-   * @param {Array<Object>} [options.plugins] [Plugins]{@link https://developers.google.com/web/tools/workbox/guides/using-plugins}
-   * to use in conjunction with this caching strategy.
+   * requests. 
+   * @param {Array<Object>} [options.plugins] 
    * @param {Object} [options.fetchOptions] Values passed along to the
-   * [`init`](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters)
-   * of [non-navigation](https://github.com/GoogleChrome/workbox/issues/1796)
-   * `fetch()` requests made by this strategy.
+   * [`init`]{@link https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters}
+   * of all fetch() requests made by this strategy.
    * @param {Object} [options.matchOptions] The
    * [`CacheQueryOptions`]{@link https://w3c.github.io/ServiceWorker/#dictdef-cachequeryoptions}
    * for any `cache.match()` or `cache.put()` calls made by this strategy.
@@ -43,16 +40,13 @@ export abstract class Strategy implements RouteHandlerCallbackObject {
   constructor(options: StrategyOptions = {}) {
     /**
      * Cache name to store and retrieve
-     * requests. Defaults to the cache names provided by
-     * {@link workbox-core.cacheNames}.
+     * requests. 
      *
      * @type {string}
      */
     this.cacheName = options.cacheName ? options.cacheName : "runtime";
     /**
-     * The list
-     * [Plugins]{@link https://developers.google.com/web/tools/workbox/guides/using-plugins}
-     * used by this strategy.
+     * Plugins to be used (to be implemented)
      *
      * @type {Array<Object>}
      */
@@ -79,8 +73,8 @@ export abstract class Strategy implements RouteHandlerCallbackObject {
    * Perform a request strategy and returns a `Promise` that will resolve with
    * a `Response`, invoking all relevant plugin callbacks.
    *
-   * When a strategy instance is registered with a Workbox
-   * {@link workbox-routing.Route}, this method is automatically
+   * When a strategy instance is registered with a 
+   * {@link Route}, this method is automatically
    * called when the route matches.
    *
    * Alternatively, this method can be used in a standalone `FetchEvent`
@@ -100,7 +94,7 @@ export abstract class Strategy implements RouteHandlerCallbackObject {
   }
 
   /**
-   * Similar to {@link workbox-strategies.Strategy~handle}, but
+   * Similar to {@link handle}, but
    * instead of just returning a `Promise` that resolves to a `Response` it
    * it will return an tuple of `[response, done]` promises, where the former
    * (`response`) is equivalent to what `handle()` returns, and the latter is a
@@ -167,7 +161,7 @@ export abstract class Strategy implements RouteHandlerCallbackObject {
       // but in case a third-party Strategy doesn't, ensure that we have a
       // consistent failure when there's no response or an error response.
       // if (!response || response.type === 'error') {
-      //   throw new WorkboxError('no-response', {url: request.url});
+      //   throw new WError('no-response', {url: request.url});
       // }
     } catch (error) {
       if (error instanceof Error) {
