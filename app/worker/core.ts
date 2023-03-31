@@ -8,12 +8,6 @@
 export type {};
 declare let self: ServiceWorkerGlobalScope;
 
-export function debug(...args: any[]) {
-  if (process.env.NODE_ENV === "development") {
-    console.debug(...args);
-  }
-}
-
 export function isMethod(request: Request, methods: string[]): boolean {
   return methods.includes(request.method.toLowerCase());
 }
@@ -21,10 +15,18 @@ export function isMethod(request: Request, methods: string[]): boolean {
 declare global {
   interface WorkerGlobalScope {
     __DISABLE_PWA_DEV_LOGS: boolean;
+    __DISABLE_PWA_DEBUG_LOGS: boolean;
+    __DISABLE_PWA_INFO_LOGS: boolean;
+    __DISABLE_PWA_WARN_LOGS: boolean;
+    __DISABLE_PWA_ERROR_LOGS: boolean;
   }
 
   interface Window {
     __DISABLE_PWA_DEV_LOGS: boolean;
+    __DISABLE_PWA_DEBUG_LOGS: boolean;
+    __DISABLE_PWA_INFO_LOGS: boolean;
+    __DISABLE_PWA_WARN_LOGS: boolean;
+    __DISABLE_PWA_ERROR_LOGS: boolean;
   }
 }
 
@@ -48,6 +50,28 @@ export const logger = (
           self.__DISABLE_PWA_DEV_LOGS = false;
         }
 
+        if (!("__DISABLE_PWA_DEBUG_LOGS" in self)) {
+          //@ts-ignore
+          self.__DISABLE_PWA_DEBUG_LOGS = false;
+        }
+
+        if (!("__DISABLE_PWA_INFO_LOGS" in self)) {
+          //@ts-ignore
+          self.__DISABLE_PWA_INFO_LOGS = false;
+        }
+
+        if (!("__DISABLE_PWA_WARN_LOGS" in self)) {
+          //@ts-ignore
+          self.__DISABLE_PWA_WARN_LOGS = false;
+        }
+
+        if (!("__DISABLE_PWA_ERROR_LOGS" in self)) {
+          //@ts-ignore
+          self.__DISABLE_PWA_ERROR_LOGS = false;
+        }
+
+        // See
+
         let inGroup = false;
 
         const methodToColorMap: { [methodName: string]: string | null } = {
@@ -61,7 +85,24 @@ export const logger = (
         };
 
         const print = function (method: LoggerMethods, args: any[]) {
+          // Conditionals to handle various log levels.
           if (self.__DISABLE_PWA_DEV_LOGS) {
+            return;
+          }
+
+          if (method === "debug" && self.__DISABLE_PWA_DEBUG_LOGS) {
+            return;
+          }
+
+          if (method === "info" && self.__DISABLE_PWA_INFO_LOGS) {
+            return;
+          }
+
+          if (method === "warn" && self.__DISABLE_PWA_WARN_LOGS) {
+            return;
+          }
+
+          if (method === "error" && self.__DISABLE_PWA_ERROR_LOGS) {
             return;
           }
 

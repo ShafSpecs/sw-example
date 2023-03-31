@@ -20,8 +20,8 @@ startTransition(() => {
 });
 
 loadServiceWorker({
-  skipWaiting: true,
   serviceWorkerUrl: "/entry.worker.js"
 })
 
-logger.info("info", "Client started");
+// logger.log("🚀 Remix is running in development mode.");
+// logger.info("👀 Service Worker activated!");

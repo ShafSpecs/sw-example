@@ -17,7 +17,6 @@
 export type LoadServiceWorkerOptions = {
   scope?: string;
   serviceWorkerUrl?: string;
-  skipWaiting?: boolean;
 };
 
 //////// ROUTING ////////

@@ -2,7 +2,7 @@
  * Contains APIs pertaining to loading, and installing a Service Worker
  */
 
-import { debug } from "./core";
+import { logger } from "./core";
 import type { LoadServiceWorkerOptions } from "./types";
 
 /// <reference lib="WebWorker" />
@@ -12,13 +12,13 @@ declare let self: ServiceWorkerGlobalScope;
 
 /**
  * Load service worker in `entry.client`
- * 
+ *
  * All parameters are optional.
- * 
+ *
  * @param {string} LoadServiceWorkerOptions.scope - Scope of the service worker.
  * @param {string} LoadServiceWorkerOptions.serviceWorkerUrl - URL of the service worker.
  * @param {boolean} LoadServiceWorkerOptions.skipWaiting - Skip waiting for the service worker.
- * 
+ *
  * ```ts
  * loadServiceWorker({
  *  scope: "/",
@@ -30,8 +30,7 @@ declare let self: ServiceWorkerGlobalScope;
 export function loadServiceWorker(
   options: LoadServiceWorkerOptions = {
     scope: "/",
-    serviceWorkerUrl: "/entry.worker.js",
-    skipWaiting: false,
+    serviceWorkerUrl: "/entry.worker.js"
   }
 ) {
   if ("serviceWorker" in navigator) {
@@ -72,7 +71,7 @@ export function loadServiceWorker(
             });
           })
           .then(() => {
-            debug("Syncing...")
+            logger.debug("Syncing...");
 
             if (navigator.serviceWorker.controller) {
               navigator.serviceWorker.controller.postMessage({
@@ -83,7 +82,7 @@ export function loadServiceWorker(
               navigator.serviceWorker.addEventListener(
                 "controllerchange",
                 () => {
-                  debug("Syncing...")
+                  logger.debug("Syncing...");
 
                   navigator.serviceWorker.controller?.postMessage({
                     type: "SYNC_REMIX_MANIFEST",
@@ -92,11 +91,15 @@ export function loadServiceWorker(
                 }
               );
             }
-          });
-
-        console.log("Service worker registered", navigator.serviceWorker.ready);
+          })
+          .then(() =>
+            logger.log(
+              "Service worker registered",
+              navigator.serviceWorker.controller
+            )
+          );
       } catch (error) {
-        console.error("Service worker registration failed", error);
+        logger.error("Service worker registration failed", error);
       }
     }
 
@@ -108,11 +111,9 @@ export function loadServiceWorker(
     } else {
       window.addEventListener("load", register);
     }
-
-    if (options.skipWaiting) {
-      self.addEventListener("install", () => {
-        self.skipWaiting();
-      });
-    }
   }
+}
+
+export function claimClient(): void {
+  self.addEventListener("activate", () => self.clients.claim());
 }
