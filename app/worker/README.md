@@ -1,7 +1,8 @@
 ## Demo `SW` module
 
 This is a demo `sw` module that allows for testing and updating features in real-time. It is not intended for production use.
-To test it out, clone this repo then run `npm run dev`.
+
+To test it out, clone this repo, install dependencies then run `npm run dev`.
 
 ### Modules
 
@@ -21,5 +22,5 @@ The current workings of strategy is the same as Workbox's `Creating a new Strate
 
 ### Roadmap
 
-- Create a test strategy that can be used as a template. (e.g `NetworkFirst`)
+- Create a test cache strategy that can be used as a template. (e.g `NetworkFirst`)
 - Add support for plugins
