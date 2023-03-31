@@ -30,29 +30,31 @@ declare global {
 }
 
 type LoggerMethods =
-  | 'debug'
-  | 'log'
-  | 'warn'
-  | 'error'
-  | 'groupCollapsed'
-  | 'groupEnd';
+  | "debug"
+  | "info"
+  | "log"
+  | "warn"
+  | "error"
+  | "groupCollapsed"
+  | "groupEnd";
 
 export const logger = (
-  process.env.NODE_ENV === 'production'
+  process.env.NODE_ENV === "production"
     ? null
     : (() => {
         // Don't overwrite this value if it's already set.
         // See https://github.com/GoogleChrome/workbox/pull/2284#issuecomment-560470923
-        if (!('__DISABLE_PWA_DEV_LOGS' in self)) {
+        if (!("__DISABLE_PWA_DEV_LOGS" in self)) {
           //@ts-ignore
           self.__DISABLE_PWA_DEV_LOGS = false;
         }
 
         let inGroup = false;
 
-        const methodToColorMap: {[methodName: string]: string | null} = {
+        const methodToColorMap: { [methodName: string]: string | null } = {
           debug: `#7f8c8d`, // Gray
           log: `#2ecc71`, // Green
+          info: `#3498db`, // Blue
           warn: `#f39c12`, // Yellow
           error: `#c0392b`, // Red
           groupCollapsed: `#3498db`, // Blue
@@ -64,7 +66,7 @@ export const logger = (
             return;
           }
 
-          if (method === 'groupCollapsed') {
+          if (method === "groupCollapsed") {
             // Safari doesn't print all console.groupCollapsed() arguments:
             // https://bugs.webkit.org/show_bug.cgi?id=182754
             if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent)) {
@@ -81,20 +83,19 @@ export const logger = (
             `padding: 2px 0.5em`,
           ];
 
-          // When in a group, the workbox prefix is not displayed.
-          const logPrefix = inGroup ? [] : ['%cworkbox', styles.join(';')];
+          const logPrefix = inGroup ? [] : ["%cremix-pwa", styles.join(";")];
 
           console[method](...logPrefix, ...args);
 
-          if (method === 'groupCollapsed') {
+          if (method === "groupCollapsed") {
             inGroup = true;
           }
-          if (method === 'groupEnd') {
+          if (method === "groupEnd") {
             inGroup = false;
           }
         };
         // eslint-disable-next-line @typescript-eslint/ban-types
-        const api: {[methodName: string]: Function} = {};
+        const api: { [methodName: string]: Function } = {};
         const loggerMethods = Object.keys(methodToColorMap);
 
         for (const key of loggerMethods) {
