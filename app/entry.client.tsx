@@ -7,7 +7,8 @@
 import { RemixBrowser } from "@remix-run/react";
 import { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
-import { loadServiceWorker } from "./sw2";
+import { loadServiceWorker } from "./worker/loader";
+import { logger } from "./worker/core";
 
 startTransition(() => {
   hydrateRoot(
@@ -22,3 +23,5 @@ loadServiceWorker({
   skipWaiting: true,
   serviceWorkerUrl: "/entry.worker.js"
 })
+
+logger.info("info", "Client started");
