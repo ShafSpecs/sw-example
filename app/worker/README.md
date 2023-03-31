@@ -12,7 +12,7 @@ To test it out, clone this repo, install dependencies then run `npm run dev`.
 - `loader.ts` - Module for loading service worker. This is the entry point for the service worker (to be used in `entry.client`)
 - `routing.ts` - Module for routing requests to the appropriate `Strategy`
 - `strategy.ts` - Module for defining `Strategy` for handling requests --- heavily inspired by Workbox
-- `types.ts` - COmplete typings of this module.
+- `types.ts` - Complete typings of this module.
 
 ### Exploring more features
 
