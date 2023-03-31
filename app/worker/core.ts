@@ -18,7 +18,6 @@ export function isMethod(request: Request, methods: string[]): boolean {
   return methods.includes(request.method.toLowerCase());
 }
 
-// Copy-pasted from workbox. Would tune later
 declare global {
   interface WorkerGlobalScope {
     __DISABLE_PWA_DEV_LOGS: boolean;
