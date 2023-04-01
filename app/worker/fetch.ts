@@ -3,6 +3,7 @@
  */
 
 import { isAssetRequest, isDocumentRequest, isLoaderRequest } from "./common";
+import { CacheFirst, NetworkFirst, NetworkOnly, CacheOnly } from "./strategy";
 
 export type MatchResponse = 'loader' | 'document' | 'asset' | null
 export type MatchRequest = (request: Request) => MatchResponse;
@@ -50,6 +51,7 @@ export interface FetchHandlerOptions {
   cacheStrategy?: CacheStrategy;
   plugins?: Plugin[];
   cacheName?: string;
+  matchOptions?: CacheQueryOptions;
 }
 
 export interface FetchHandlerParams {
