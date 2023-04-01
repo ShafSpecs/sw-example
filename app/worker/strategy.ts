@@ -1,18 +1,22 @@
-export type StrategyOptions = {
-  cacheName: string;
-  plugins: any[];
+export interface StrategyOptions {
+  cacheName?: string;
+  plugins?: any[];
+  matchOptions?: CacheQueryOptions;
 };
 
 export abstract class Strategy {
   protected cacheName: string;
   protected plugins: any[];
+  protected matchOptions?: CacheQueryOptions
 
   constructor({
     cacheName = `cache-${Math.random() * 10_000}`,
     plugins = [],
+    matchOptions
   }: StrategyOptions) {
     this.cacheName = cacheName;
     this.plugins = plugins;
+    this.matchOptions = matchOptions || {};
   }
 
   abstract _handle({ request }: { request: Request }): Promise<Response>;
@@ -36,7 +40,20 @@ export class CacheFirst extends Strategy {
   }
 }
 
+export interface NetworkFirstOptions extends StrategyOptions {
+  networkTimeoutSeconds?: number;
+}
+
 export class NetworkFirst extends Strategy {
+  private readonly _networkTimeoutSeconds: number;
+
+  constructor(options: NetworkFirstOptions) {
+    super(options);
+
+    // (ShafSpecs) todo: give _networkTimeoutSeconds an implementation later
+    this._networkTimeoutSeconds = options.networkTimeoutSeconds || 30;
+  }
+
   async _handle({ request }: { request: Request }) {
     const cache = await caches.open(this.cacheName);
 
@@ -56,7 +73,21 @@ export class NetworkFirst extends Strategy {
   }
 }
 
+export interface NetworkOnlyOptions extends Omit<StrategyOptions, "cacheName" | "matchOptions"> {
+  // (ShafSpecs) todo: give _networkTimeoutSeconds an implementation later
+  networkTimeoutSeconds?: number;
+}
+
 export class NetworkOnly extends Strategy {
+  private readonly _networkTimeoutSeconds: number;
+
+  constructor(options: NetworkOnlyOptions = {}) {
+    super(options);
+
+    // (ShafSpecs) todo: give _networkTimeoutSeconds an implementation later
+    this._networkTimeoutSeconds = options.networkTimeoutSeconds || 30;
+  }
+
   async _handle({ request }: { request: Request }) {
     return fetch(request.clone());
   }
