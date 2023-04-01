@@ -1,6 +1,6 @@
 /// <reference lib="WebWorker" />
 
-// BUGS: None 
+// BUGS: Doesn't work offline now for some reason, fix later 🙄
 // Fixed the loader not cahing issue, was caused by `matchRequest` function
 
 // This worker showcases most of the progress made; strategies, custom strategies;
