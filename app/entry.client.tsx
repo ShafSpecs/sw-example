@@ -7,8 +7,8 @@
 import { RemixBrowser } from "@remix-run/react";
 import { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
-import { loadServiceWorker } from "./worker/loader";
-import { logger } from "./worker/core";
+import { loadServiceWorker } from "./deprecated/loader";
+import { logger } from "./deprecated/core";
 
 startTransition(() => {
   hydrateRoot(
