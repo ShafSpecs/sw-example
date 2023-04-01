@@ -1,7 +1,7 @@
 /// <reference lib="WebWorker" />
 
 // BUGS: Currently, the worker works and caches well, just doesn't work for 
-// loaders. Would fix later. 
+// loaders (Line 117). Would fix later. 
 
 // This worker showcases most of the progress made; strategies, custom strategies;
 // custom handlers, custom matchers, etc. Still a lot more to be improved on.
