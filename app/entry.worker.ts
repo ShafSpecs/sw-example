@@ -1,7 +1,12 @@
 /// <reference lib="WebWorker" />
 
 // BUGS: Doesn't work offline now for some reason, fix later 🙄
-// Fixed the loader not cahing issue, was caused by `matchRequest` function
+// FIX: Initializing a new instance of the strategy for each request is not a good idea
+// Try to find a way to cram the strategy into a method and still allow for flexibility
+// and extensibility.
+// 
+// FIXES: 
+//   - Fixed the loader not cahing issue, was caused by `matchRequest` function
 
 // This worker showcases most of the progress made; strategies, custom strategies;
 // custom handlers, custom matchers, etc. Still a lot more to be improved on.
