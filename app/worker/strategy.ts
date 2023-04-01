@@ -1,7 +1,9 @@
+export interface CacheQueryMatchOptions extends Omit<CacheQueryOptions, "cacheName" | "ignoreMethod"> {}
+
 export interface StrategyOptions {
   cacheName?: string;
   plugins?: any[];
-  matchOptions?: CacheQueryOptions;
+  matchOptions?: CacheQueryMatchOptions;
 };
 
 export abstract class Strategy {
@@ -19,14 +21,17 @@ export abstract class Strategy {
     this.matchOptions = matchOptions || {};
   }
 
-  abstract _handle({ request }: { request: Request }): Promise<Response>;
+  abstract _handle({ request, options }: { request: Request, options?: CacheQueryMatchOptions }): Promise<Response>;
 }
 
 export class CacheFirst extends Strategy {
-  async _handle({ request }: { request: Request }) {
+  async _handle({ request, options }: { request: Request, options: CacheQueryMatchOptions }) {
     const cache = await caches.open(this.cacheName);
 
-    const cachedResponse = await cache.match(request);
+    const cachedResponse = await cache.match(request, {
+      ignoreVary: options?.ignoreVary || false,
+      ignoreSearch: options?.ignoreSearch || false,
+    });
     if (cachedResponse) {
       return cachedResponse;
     }
@@ -54,7 +59,7 @@ export class NetworkFirst extends Strategy {
     this._networkTimeoutSeconds = options.networkTimeoutSeconds || 30;
   }
 
-  async _handle({ request }: { request: Request }) {
+  async _handle({ request, options }: { request: Request, options?: CacheQueryMatchOptions }) {
     const cache = await caches.open(this.cacheName);
 
     try {
@@ -63,7 +68,10 @@ export class NetworkFirst extends Strategy {
 
       return response;
     } catch (error) {
-      const cachedResponse = await cache.match(request);
+      const cachedResponse = await cache.match(request, {
+        ignoreVary: options?.ignoreVary || false,
+        ignoreSearch: options?.ignoreSearch || false,
+      });
       if (cachedResponse) {
         return cachedResponse;
       }
@@ -94,10 +102,13 @@ export class NetworkOnly extends Strategy {
 }
 
 export class CacheOnly extends Strategy {
-  async _handle({ request }: { request: Request }) {
+  async _handle({ request, options }: { request: Request, options?: CacheQueryMatchOptions }) {
     const cache = await caches.open(this.cacheName);
 
-    const cachedResponse = await cache.match(request);
+    const cachedResponse = await cache.match(request, {
+      ignoreVary: options?.ignoreVary || false,
+      ignoreSearch: options?.ignoreSearch || false,
+    });
     if (cachedResponse) {
       return cachedResponse;
     }
