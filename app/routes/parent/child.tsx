@@ -19,6 +19,7 @@ export default function Child() {
     <div>
       <h1>Welcome to Child</h1>
       <h2>The time is: {time}</h2>
+      <img src="/images/car-2.jpg" alt="Car" style={{ width: "400px" }} />
       <Link to='/parent'>Goto Parent</Link>
     </div>
   );

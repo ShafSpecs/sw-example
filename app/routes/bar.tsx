@@ -19,6 +19,7 @@ export default function Bar() {
     <div>
       <h1>Welcome to Bar</h1>
       <h2>The time is: {time}</h2>
+      <img src="/images/car-1.jpg" alt="Car" style={{ width: "400px" }} />
       <Link to='/'>Goto Home</Link>
     </div>
   );
