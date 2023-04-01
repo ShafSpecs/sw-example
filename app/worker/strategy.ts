@@ -28,13 +28,13 @@ export abstract class Strategy {
     matchOptions,
   }: StrategyOptions) {
     this.cacheName = cacheName;
-    this.plugins = plugins;
+    this.plugins = plugins || [];
     this.matchOptions = matchOptions || {};
   }
 
   protected abstract _handle(request: Request): Promise<Response>;
 
-  async handle(request: Request) {
+  async handle(request: Request): Promise<Response> {
     if (!isHttpRequest(request)) {
       // (ShafSpecs) todo: Handle this better. Can't be throwing errors 
       // all over the user app if the SW intercepts an extension request
