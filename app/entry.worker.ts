@@ -4,6 +4,7 @@
 // FIX: Initializing a new instance of the strategy for each request is not a good idea
 // Try to find a way to cram the strategy into a method and still allow for flexibility
 // and extensibility.
+// Doesn't seem to fix it.
 // 
 // FIXES: 
 //   - Fixed the loader not cahing issue, was caused by `matchRequest` function
