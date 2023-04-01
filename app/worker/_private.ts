@@ -1,88 +1,193 @@
 /**
- * Literally APIs you won't use outside the `sw` module
+ * This is contains internal APIs for `sw` modules like `logger` - which is based on
+ * Workbox logger
  */
 
-import { Router } from "./routing";
-import type { RouteHandlerCallback, RouteHandler_ } from "./types";
+/// <reference lib="WebWorker" />
 
-export const normalizeHandler = (
-  handler: RouteHandler_
-): { handle: RouteHandlerCallback } => {
-  if (handler && typeof handler === "object") {
-    return handler;
-  } else {
-    return { handle: handler };
-  }
-};
+export type {};
+declare let self: ServiceWorkerGlobalScope;
 
-let defaultRouter: Router;
-
-export const getOrCreateDefaultRouter = (): Router => {
-  if (!defaultRouter) {
-    defaultRouter = new Router();
-
-    // The helpers that use the default Router assume these listeners exist.
-    defaultRouter.addFetchListener();
-    defaultRouter.addCacheListener();
-  }
-  return defaultRouter;
-};
-
-export function timeout(ms: number): Promise<unknown> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-export function stripParams(fullURL: string, ignoreParams: string[]) {
-  const strippedURL = new URL(fullURL);
-  for (const param of ignoreParams) {
-    strippedURL.searchParams.delete(param);
-  }
-  return strippedURL.href;
-}
-
-export async function cacheMatchIgnoreParams(
-  cache: Cache,
-  request: Request,
-  ignoreParams: string[],
-  matchOptions?: CacheQueryOptions,
-): Promise<Response | undefined> {
-  const strippedRequestURL = stripParams(request.url, ignoreParams);
-
-  // If the request doesn't include any ignored params, match as normal.
-  if (request.url === strippedRequestURL) {
-    return cache.match(request, matchOptions);
+declare global {
+  interface WorkerGlobalScope {
+    /**
+     * Disable all logs from displaying in the console.
+     * 
+     * @default false
+     */
+    __DISABLE_PWA_DEV_LOGS: boolean;
+    /**
+     * Disable debug logs from displaying in the console.
+     * 
+     * @default false
+     */
+    __DISABLE_PWA_DEBUG_LOGS: boolean;
+    /**
+     * Disable info logs from displaying in the console.
+     * 
+     * @default false
+     */
+    __DISABLE_PWA_INFO_LOGS: boolean;
+    /**
+     * Disable warning logs from displaying in the console.
+     * 
+     * @default false
+     */
+    __DISABLE_PWA_WARN_LOGS: boolean;
+    /**
+     * Disable error logs from displaying in the console.
+     * 
+     * @default false
+     */
+    __DISABLE_PWA_ERROR_LOGS: boolean;
   }
 
-  // Otherwise, match by comparing keys
-  const keysOptions = {...matchOptions, ignoreSearch: true};
-  const cacheKeys = await cache.keys(request, keysOptions);
-
-  for (const cacheKey of cacheKeys) {
-    const strippedCacheKeyURL = stripParams(cacheKey.url, ignoreParams);
-    if (strippedRequestURL === strippedCacheKeyURL) {
-      return cache.match(cacheKey, matchOptions);
-    }
-  }
-  return;
-}
-
-
-export function toRequest(input: RequestInfo) {
-  return typeof input === 'string' ? new Request(input) : input;
-}
-
-export class Deferred<T> {
-  promise: Promise<T>;
-  resolve!: (value: T) => void;
-  reject!: (reason?: any) => void;
-
-  /**
-   * Creates a promise and exposes its resolve and reject functions as methods.
-   */
-  constructor() {
-    this.promise = new Promise((resolve, reject) => {
-      this.resolve = resolve;
-      this.reject = reject;
-    });
+  interface Window {
+    /**
+     * Disable all logs from displaying in the console.
+     * 
+     * @default false
+     */
+    __DISABLE_PWA_DEV_LOGS: boolean;
+    /**
+     * Disable debug logs from displaying in the console.
+     * 
+     * @default false
+     */
+    __DISABLE_PWA_DEBUG_LOGS: boolean;
+    /**
+     * Disable info logs from displaying in the console.
+     * 
+     * @default false
+     */
+    __DISABLE_PWA_INFO_LOGS: boolean;
+    /**
+     * Disable warning logs from displaying in the console.
+     * 
+     * @default false
+     */
+    __DISABLE_PWA_WARN_LOGS: boolean;
+    /**
+     * Disable error logs from displaying in the console.
+     * 
+     * @default false
+     */
+    __DISABLE_PWA_ERROR_LOGS: boolean;
   }
 }
+
+type LoggerMethods =
+  | "debug"
+  | "info"
+  | "log"
+  | "warn"
+  | "error"
+  | "groupCollapsed"
+  | "groupEnd";
+
+export const logger = (
+  process.env.NODE_ENV === "production"
+    ? null
+    : (() => {
+        if (!("__DISABLE_PWA_DEV_LOGS" in self)) {
+          //@ts-ignore
+          self.__DISABLE_PWA_DEV_LOGS = false;
+        }
+
+        if (!("__DISABLE_PWA_DEBUG_LOGS" in self)) {
+          //@ts-ignore
+          self.__DISABLE_PWA_DEBUG_LOGS = false;
+        }
+
+        if (!("__DISABLE_PWA_INFO_LOGS" in self)) {
+          //@ts-ignore
+          self.__DISABLE_PWA_INFO_LOGS = false;
+        }
+
+        if (!("__DISABLE_PWA_WARN_LOGS" in self)) {
+          //@ts-ignore
+          self.__DISABLE_PWA_WARN_LOGS = false;
+        }
+
+        if (!("__DISABLE_PWA_ERROR_LOGS" in self)) {
+          //@ts-ignore
+          self.__DISABLE_PWA_ERROR_LOGS = false;
+        }
+
+        let inGroup = false;
+
+        const methodToColorMap: { [methodName: string]: string | null } = {
+          debug: `#7f8c8d`, // Gray
+          log: `#2ecc71`, // Green
+          info: `#3498db`, // Blue
+          warn: `#f39c12`, // Yellow
+          error: `#c0392b`, // Red
+          groupCollapsed: `#3498db`, // Blue
+          groupEnd: null, // No colored prefix on groupEnd
+        };
+
+        const print = function (method: LoggerMethods, args: any[]) {
+          // Conditionals to handle various log levels.
+          if (self.__DISABLE_PWA_DEV_LOGS) {
+            return;
+          }
+
+          if (method === "debug" && self.__DISABLE_PWA_DEBUG_LOGS) {
+            return;
+          }
+
+          if (method === "info" && self.__DISABLE_PWA_INFO_LOGS) {
+            return;
+          }
+
+          if (method === "warn" && self.__DISABLE_PWA_WARN_LOGS) {
+            return;
+          }
+
+          if (method === "error" && self.__DISABLE_PWA_ERROR_LOGS) {
+            return;
+          }
+
+          if (method === "groupCollapsed") {
+            // Safari doesn't print all console.groupCollapsed() arguments:
+            // https://bugs.webkit.org/show_bug.cgi?id=182754
+            if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent)) {
+              console[method](...args);
+              return;
+            }
+          }
+
+          const styles = [
+            `background: ${methodToColorMap[method]!}`,
+            `border-radius: 0.5em`,
+            `color: white`,
+            `font-weight: bold`,
+            `padding: 2px 0.5em`,
+          ];
+
+          const logPrefix = inGroup ? [] : ["%cremix-pwa", styles.join(";")];
+
+          console[method](...logPrefix, ...args);
+
+          if (method === "groupCollapsed") {
+            inGroup = true;
+          }
+          if (method === "groupEnd") {
+            inGroup = false;
+          }
+        };
+        // eslint-disable-next-line @typescript-eslint/ban-types
+        const api: { [methodName: string]: Function } = {};
+        const loggerMethods = Object.keys(methodToColorMap);
+
+        for (const key of loggerMethods) {
+          const method = key as LoggerMethods;
+
+          api[method] = (...args: any[]) => {
+            print(method, args);
+          };
+        }
+
+        return api as unknown;
+      })()
+) as Console;
