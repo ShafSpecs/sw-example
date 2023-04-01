@@ -12,7 +12,7 @@ export type StrategyHandlerParams = {
   options?: CacheQueryMatchOptions;
 };
 
-// Helper function 
+// Helper function
 const isHttpRequest = (request: Request): boolean => {
   return request.url.startsWith("http");
 };
@@ -36,7 +36,7 @@ export abstract class Strategy {
 
   async handle(request: Request): Promise<Response> {
     if (!isHttpRequest(request)) {
-      // (ShafSpecs) todo: Handle this better. Can't be throwing errors 
+      // (ShafSpecs) todo: Handle this better. Can't be throwing errors
       // all over the user app if the SW intercepts an extension request
       throw new Error("The request is not an HTTP request");
     }
@@ -47,22 +47,33 @@ export abstract class Strategy {
 
 export class CacheFirst extends Strategy {
   async _handle(request: Request) {
-    const cache = await caches.open(this.cacheName);
+    try {
+      const cache = await caches.open(this.cacheName);
 
-    const cachedResponse = await cache.match(request, {
-      ignoreVary: this.matchOptions?.ignoreVary || false,
-      ignoreSearch: this.matchOptions?.ignoreSearch || false,
-    });
-    if (cachedResponse) {
-      return cachedResponse;
-    }
+      const cachedResponse = await cache.match(request, {
+        ignoreVary: this.matchOptions?.ignoreVary || false,
+        ignoreSearch: this.matchOptions?.ignoreSearch || false,
+      });
+      if (cachedResponse) {
+        return cachedResponse;
+      }
 
-    const response = await fetch(request.clone());
-    if (response.status === 200) {
+      const response = await fetch(request.clone());
       await cache.put(request, response.clone());
-    }
 
-    return response;
+      return response;
+    } catch (error) {
+      const cachedResponse = await caches.match(request, {
+        ignoreVary: this.matchOptions?.ignoreVary || false,
+        ignoreSearch: this.matchOptions?.ignoreSearch || false,
+      });
+
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+
+      throw error;
+    }
   }
 }
 
@@ -81,23 +92,28 @@ export class NetworkFirst extends Strategy {
   }
 
   async _handle(request: Request) {
-    const cache = await caches.open(this.cacheName);
-
     try {
+      const cache = await caches.open(this.cacheName);
+
       const response = await fetch(request.clone());
       await cache.put(request, response.clone());
 
       return response;
     } catch (error) {
-      const cachedResponse = await cache.match(request, {
+      const cachedResponse = await caches.match(request, {
         ignoreVary: this.matchOptions?.ignoreVary || false,
         ignoreSearch: this.matchOptions?.ignoreSearch || false,
       });
+
       if (cachedResponse) {
+        cachedResponse.headers.set("X-Remix-Worker", "yes");
         return cachedResponse;
       }
 
-      throw error;
+      return new Response(JSON.stringify({ message: "Network Error" }), {
+        status: 500,
+        headers: { "X-Remix-Catch": "yes", "X-Remix-Worker": "yes" },
+      });
     }
   }
 }

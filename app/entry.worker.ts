@@ -193,7 +193,18 @@ self.addEventListener("activate", () => {
 });
 
 self.addEventListener("fetch", (event) => {
-  event.waitUntil(fetchHandler(event));
+  event.waitUntil((async () => {
+    let result = {} as
+      | { error: unknown; response: undefined }
+      | { error: undefined; response: Response };
+    try {
+      result.response = await fetchHandler(event);
+    } catch (error) {
+      result.error = error;
+    }
+
+    return result.response;
+  })());
 });
 
 self.addEventListener("message", (event) => {
