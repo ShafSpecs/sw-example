@@ -1,36 +1,57 @@
-export interface CacheQueryMatchOptions extends Omit<CacheQueryOptions, "cacheName" | "ignoreMethod"> {}
+export interface CacheQueryMatchOptions
+  extends Omit<CacheQueryOptions, "cacheName" | "ignoreMethod"> {}
 
 export interface StrategyOptions {
   cacheName?: string;
-  plugins?: any[];
+  plugins?: any[]; // (ShafSpecs) todo: change this to a proper type later
   matchOptions?: CacheQueryMatchOptions;
+}
+
+export type StrategyHandlerParams = {
+  request: Request;
+  options?: CacheQueryMatchOptions;
+};
+
+// Helper function 
+const isHttpRequest = (request: Request): boolean => {
+  return request.url.startsWith("http");
 };
 
 export abstract class Strategy {
   protected cacheName: string;
   protected plugins: any[];
-  protected matchOptions?: CacheQueryOptions
+  protected matchOptions?: CacheQueryMatchOptions;
 
   constructor({
     cacheName = `cache-${Math.random() * 10_000}`,
     plugins = [],
-    matchOptions
+    matchOptions,
   }: StrategyOptions) {
     this.cacheName = cacheName;
     this.plugins = plugins;
     this.matchOptions = matchOptions || {};
   }
 
-  abstract _handle({ request, options }: { request: Request, options?: CacheQueryMatchOptions }): Promise<Response>;
+  protected abstract _handle(request: Request): Promise<Response>;
+
+  async handle(request: Request) {
+    if (!isHttpRequest(request)) {
+      // (ShafSpecs) todo: Handle this better. Can't be throwing errors 
+      // all over the user app if the SW intercepts an extension request
+      throw new Error("The request is not an HTTP request");
+    }
+
+    return this._handle(request);
+  }
 }
 
 export class CacheFirst extends Strategy {
-  async _handle({ request, options }: { request: Request, options: CacheQueryMatchOptions }) {
+  async _handle(request: Request) {
     const cache = await caches.open(this.cacheName);
 
     const cachedResponse = await cache.match(request, {
-      ignoreVary: options?.ignoreVary || false,
-      ignoreSearch: options?.ignoreSearch || false,
+      ignoreVary: this.matchOptions?.ignoreVary || false,
+      ignoreSearch: this.matchOptions?.ignoreSearch || false,
     });
     if (cachedResponse) {
       return cachedResponse;
@@ -59,7 +80,7 @@ export class NetworkFirst extends Strategy {
     this._networkTimeoutSeconds = options.networkTimeoutSeconds || 30;
   }
 
-  async _handle({ request, options }: { request: Request, options?: CacheQueryMatchOptions }) {
+  async _handle(request: Request) {
     const cache = await caches.open(this.cacheName);
 
     try {
@@ -69,8 +90,8 @@ export class NetworkFirst extends Strategy {
       return response;
     } catch (error) {
       const cachedResponse = await cache.match(request, {
-        ignoreVary: options?.ignoreVary || false,
-        ignoreSearch: options?.ignoreSearch || false,
+        ignoreVary: this.matchOptions?.ignoreVary || false,
+        ignoreSearch: this.matchOptions?.ignoreSearch || false,
       });
       if (cachedResponse) {
         return cachedResponse;
@@ -81,7 +102,8 @@ export class NetworkFirst extends Strategy {
   }
 }
 
-export interface NetworkOnlyOptions extends Omit<StrategyOptions, "cacheName" | "matchOptions"> {
+export interface NetworkOnlyOptions
+  extends Omit<StrategyOptions, "cacheName" | "matchOptions"> {
   // (ShafSpecs) todo: give _networkTimeoutSeconds an implementation later
   networkTimeoutSeconds?: number;
 }
@@ -96,18 +118,18 @@ export class NetworkOnly extends Strategy {
     this._networkTimeoutSeconds = options.networkTimeoutSeconds || 30;
   }
 
-  async _handle({ request }: { request: Request }) {
+  async _handle(request: Request) {
     return fetch(request.clone());
   }
 }
 
 export class CacheOnly extends Strategy {
-  async _handle({ request, options }: { request: Request, options?: CacheQueryMatchOptions }) {
+  async _handle(request: Request) {
     const cache = await caches.open(this.cacheName);
 
     const cachedResponse = await cache.match(request, {
-      ignoreVary: options?.ignoreVary || false,
-      ignoreSearch: options?.ignoreSearch || false,
+      ignoreVary: this.matchOptions?.ignoreVary || false,
+      ignoreSearch: this.matchOptions?.ignoreSearch || false,
     });
     if (cachedResponse) {
       return cachedResponse;
