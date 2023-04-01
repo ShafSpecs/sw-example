@@ -8,10 +8,11 @@ export function isMethod(request: Request, methods: string[]): boolean {
   return methods.includes(request.method.toLowerCase());
 }
 
-export function isAssetRequest(request: Request): boolean {
+
+export function isAssetRequest(request: Request, assets: string[] = ["/build/", "/icons"]): boolean {
   return (
     isMethod(request, ["get"]) &&
-    ["/build/", "/icons"].some((publicPath) =>
+    assets.some((publicPath) =>
       request.url.includes(publicPath)
     )
   );
