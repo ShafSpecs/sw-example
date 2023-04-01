@@ -1,7 +1,7 @@
 /// <reference lib="WebWorker" />
 
-// BUGS: Currently, the worker works and caches well, just doesn't work for 
-// loaders (Line 117). Would fix later. 
+// BUGS: None 
+// Fixed the loader not cahing issue, was caused by `matchRequest` function
 
 // This worker showcases most of the progress made; strategies, custom strategies;
 // custom handlers, custom matchers, etc. Still a lot more to be improved on.
@@ -73,10 +73,6 @@ const fetchHandler = async (event: FetchEvent): Promise<Response> => {
   const match = matchRequest(request);
 
   let strategy: Strategy;
-
-  if (!match) {
-    return fetch(request.clone());
-  }
 
   // Run through the matched request and use the appropriate strategy
   // to handle the request.
