@@ -45,7 +45,8 @@ const matchRequest = (
 // ---- Example ----
 // Creating a custom strategy for the images
 // This strategy would serve from cache and update
-// the cache with network in the background (StaleWhileRevalidate)
+// the cache with network in the background - kinda 
+// (StaleWhileRevalidate)
 class ImageCacheStrategy extends Strategy {
   async _handle(request: Request) {
     const cache = await caches.open(IMAGES);
