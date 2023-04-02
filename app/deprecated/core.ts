@@ -12,73 +12,73 @@ export function isMethod(request: Request, methods: string[]): boolean {
   return methods.includes(request.method.toLowerCase());
 }
 
-declare global {
-  interface WorkerGlobalScope {
-    /**
-     * Disable all logs from displaying in the console.
-     * 
-     * @default false
-     */
-    __DISABLE_PWA_DEV_LOGS: boolean;
-    /**
-     * Disable debug logs from displaying in the console.
-     * 
-     * @default false
-     */
-    __DISABLE_PWA_DEBUG_LOGS: boolean;
-    /**
-     * Disable info logs from displaying in the console.
-     * 
-     * @default false
-     */
-    __DISABLE_PWA_INFO_LOGS: boolean;
-    /**
-     * Disable warning logs from displaying in the console.
-     * 
-     * @default false
-     */
-    __DISABLE_PWA_WARN_LOGS: boolean;
-    /**
-     * Disable error logs from displaying in the console.
-     * 
-     * @default false
-     */
-    __DISABLE_PWA_ERROR_LOGS: boolean;
-  }
+// declare global {
+//   interface WorkerGlobalScope {
+//     /**
+//      * Disable all logs from displaying in the console.
+//      * 
+//      * @default false
+//      */
+//     __DISABLE_PWA_DEV_LOGS: boolean;
+//     /**
+//      * Disable debug logs from displaying in the console.
+//      * 
+//      * @default false
+//      */
+//     __DISABLE_PWA_DEBUG_LOGS: boolean;
+//     /**
+//      * Disable info logs from displaying in the console.
+//      * 
+//      * @default false
+//      */
+//     __DISABLE_PWA_INFO_LOGS: boolean;
+//     /**
+//      * Disable warning logs from displaying in the console.
+//      * 
+//      * @default false
+//      */
+//     __DISABLE_PWA_WARN_LOGS: boolean;
+//     /**
+//      * Disable error logs from displaying in the console.
+//      * 
+//      * @default false
+//      */
+//     __DISABLE_PWA_ERROR_LOGS: boolean;
+//   }
 
-  interface Window {
-    /**
-     * Disable all logs from displaying in the console.
-     * 
-     * @default false
-     */
-    __DISABLE_PWA_DEV_LOGS: boolean;
-    /**
-     * Disable debug logs from displaying in the console.
-     * 
-     * @default false
-     */
-    __DISABLE_PWA_DEBUG_LOGS: boolean;
-    /**
-     * Disable info logs from displaying in the console.
-     * 
-     * @default false
-     */
-    __DISABLE_PWA_INFO_LOGS: boolean;
-    /**
-     * Disable warning logs from displaying in the console.
-     * 
-     * @default false
-     */
-    __DISABLE_PWA_WARN_LOGS: boolean;
-    /**
-     * Disable error logs from displaying in the console.
-     * 
-     * @default false
-     */
-    __DISABLE_PWA_ERROR_LOGS: boolean;
-  }
-}
+//   interface Window {
+//     /**
+//      * Disable all logs from displaying in the console.
+//      * 
+//      * @default false
+//      */
+//     __DISABLE_PWA_DEV_LOGS: boolean;
+//     /**
+//      * Disable debug logs from displaying in the console.
+//      * 
+//      * @default false
+//      */
+//     __DISABLE_PWA_DEBUG_LOGS: boolean;
+//     /**
+//      * Disable info logs from displaying in the console.
+//      * 
+//      * @default false
+//      */
+//     __DISABLE_PWA_INFO_LOGS: boolean;
+//     /**
+//      * Disable warning logs from displaying in the console.
+//      * 
+//      * @default false
+//      */
+//     __DISABLE_PWA_WARN_LOGS: boolean;
+//     /**
+//      * Disable error logs from displaying in the console.
+//      * 
+//      * @default false
+//      */
+//     __DISABLE_PWA_ERROR_LOGS: boolean;
+//   }
+// }
 
 type LoggerMethods =
   | "debug"

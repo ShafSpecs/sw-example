@@ -2,15 +2,13 @@
  * Contains APIs pertaining to loading, and installing a Service Worker
  */
 
+import { logger } from "./core";
+import type { LoadServiceWorkerOptions } from "./types";
+
 /// <reference lib="WebWorker" />
 
 export type {};
 declare let self: ServiceWorkerGlobalScope;
-
-export type LoadServiceWorkerOptions = {
-  scope?: string;
-  serviceWorkerUrl?: string;
-};
 
 /**
  * Load service worker in `entry.client`
@@ -104,7 +102,7 @@ export function loadServiceWorker(
             // )
           );
       } catch (error) {
-        // logger.error("Service worker registration failed", error);
+        logger.error("Service worker registration failed", error);
       }
     }
 

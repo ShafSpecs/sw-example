@@ -1,5 +1,7 @@
 ## Demo `SW` module
 
+**Currently deprecated**
+
 This is a demo `sw` module that allows for testing and updating features in real-time. It is not intended for production use.
 
 To test it out, clone this repo, install dependencies then run `npm run dev`.

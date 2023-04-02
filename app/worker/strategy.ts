@@ -1,239 +1,156 @@
-/**
- * Multiple caching strategies would be included here. I also went 
- * with Worbox style of separating caching strategies (NetworkFirst, CacheOnly, etc.) as it opens up more 
- * possibilities for extensions, plugins, etc.
- */
+export interface CacheQueryMatchOptions
+  extends Omit<CacheQueryOptions, "cacheName" | "ignoreMethod"> {}
 
-import { StrategyHandler } from "./_strategy";
-import type { HandlerCallbackOptions, Plugin, RouteHandlerCallbackObject, StrategyOptions } from "./types";
+export interface StrategyOptions {
+  cacheName?: string;
+  plugins?: any[]; // (ShafSpecs) todo: change this to a proper type later
+  matchOptions?: CacheQueryMatchOptions;
+}
 
-export abstract class Strategy implements RouteHandlerCallbackObject {
-  cacheName: string;
-  plugins: Plugin[];
-  fetchOptions?: RequestInit;
-  matchOptions?: CacheQueryOptions;
+export type StrategyHandlerParams = {
+  request: Request;
+  options?: CacheQueryMatchOptions;
+};
 
-  protected abstract _handle(
-    request: Request,
-    handler: StrategyHandler,
-  ): Promise<Response | undefined>;
+// Helper function
+const isHttpRequest = (request: Request): boolean => {
+  return request.url.startsWith("http");
+};
 
-  /**
-   * Creates a new instance of the strategy and sets all documented option
-   * properties as public instance properties.
-   *
-   * Note: if a custom strategy class extends the base Strategy class and does
-   * not need more than these properties, it does not need to define its own
-   * constructor.
-   *
-   * @param {Object} [options]
-   * @param {string} [options.cacheName] Cache name to store and retrieve
-   * requests. 
-   * @param {Array<Object>} [options.plugins] 
-   * @param {Object} [options.fetchOptions] Values passed along to the
-   * [`init`]{@link https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters}
-   * of all fetch() requests made by this strategy.
-   * @param {Object} [options.matchOptions] The
-   * [`CacheQueryOptions`]{@link https://w3c.github.io/ServiceWorker/#dictdef-cachequeryoptions}
-   * for any `cache.match()` or `cache.put()` calls made by this strategy.
-   */
-  constructor(options: StrategyOptions = {}) {
-    /**
-     * Cache name to store and retrieve
-     * requests. 
-     *
-     * @type {string}
-     */
-    this.cacheName = options.cacheName ? options.cacheName : "runtime";
-    /**
-     * Plugins to be used (to be implemented)
-     *
-     * @type {Array<Object>}
-     */
-    this.plugins = options.plugins || [];
-    /**
-     * Values passed along to the
-     * [`init`]{@link https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters}
-     * of all fetch() requests made by this strategy.
-     *
-     * @type {Object}
-     */
-    this.fetchOptions = options.fetchOptions;
-    /**
-     * The
-     * [`CacheQueryOptions`]{@link https://w3c.github.io/ServiceWorker/#dictdef-cachequeryoptions}
-     * for any `cache.match()` or `cache.put()` calls made by this strategy.
-     *
-     * @type {Object}
-     */
-    this.matchOptions = options.matchOptions;
+export abstract class Strategy {
+  protected cacheName: string;
+  protected plugins: any[];
+  protected matchOptions?: CacheQueryMatchOptions;
+
+  constructor({
+    cacheName = `cache-${Math.random() * 10_000}`,
+    plugins = [],
+    matchOptions,
+  }: StrategyOptions) {
+    this.cacheName = cacheName;
+    this.plugins = plugins || [];
+    this.matchOptions = matchOptions || {};
   }
 
-  /**
-   * Perform a request strategy and returns a `Promise` that will resolve with
-   * a `Response`, invoking all relevant plugin callbacks.
-   *
-   * When a strategy instance is registered with a 
-   * {@link Route}, this method is automatically
-   * called when the route matches.
-   *
-   * Alternatively, this method can be used in a standalone `FetchEvent`
-   * listener by passing it to `event.respondWith()`.
-   *
-   * @param {FetchEvent|Object} options A `FetchEvent` or an object with the
-   *     properties listed below.
-   * @param {Request|string} options.request A request to run this strategy for.
-   * @param {ExtendableEvent} options.event The event associated with the
-   *     request.
-   * @param {URL} [options.url]
-   * @param {*} [options.params]
-   */
-  handle(options: FetchEvent | HandlerCallbackOptions): Promise<Response> {
-    const [responseDone] = this.handleAll(options);
-    return responseDone;
-  }
+  protected abstract _handle(request: Request): Promise<Response>;
 
-  /**
-   * Similar to {@link handle}, but
-   * instead of just returning a `Promise` that resolves to a `Response` it
-   * it will return an tuple of `[response, done]` promises, where the former
-   * (`response`) is equivalent to what `handle()` returns, and the latter is a
-   * Promise that will resolve once any promises that were added to
-   * `event.waitUntil()` as part of performing the strategy have completed.
-   *
-   * You can await the `done` promise to ensure any extra work performed by
-   * the strategy (usually caching responses) completes successfully.
-   *
-   * @param {FetchEvent|Object} options A `FetchEvent` or an object with the
-   *     properties listed below.
-   * @param {Request|string} options.request A request to run this strategy for.
-   * @param {ExtendableEvent} options.event The event associated with the
-   *     request.
-   * @param {URL} [options.url]
-   * @param {*} [options.params]
-   * @return {Array<Promise>} A tuple of [response, done]
-   *     promises that can be used to determine when the response resolves as
-   *     well as when the handler has completed all its work.
-   */
-  handleAll(
-    options: FetchEvent | HandlerCallbackOptions,
-  ): [Promise<Response>, Promise<void>] {
-    // Allow for flexible options to be passed.
-    if (options instanceof FetchEvent) {
-      options = {
-        event: options,
-        request: options.request,
-      };
+  async handle(request: Request): Promise<Response> {
+    if (!isHttpRequest(request)) {
+      // (ShafSpecs) todo: Handle this better. Can't be throwing errors
+      // all over the user app if the SW intercepts an extension request
+      throw new Error("The request is not an HTTP request");
     }
 
-    const event = options.event;
-    const request =
-      typeof options.request === 'string'
-        ? new Request(options.request)
-        : options.request;
-    const params = 'params' in options ? options.params : undefined;
-
-    const handler = new StrategyHandler(this, {event, request, params});
-
-    const responseDone = this._getResponse(handler, request, event);
-    const handlerDone = this._awaitComplete(
-      responseDone,
-      handler,
-      request,
-      event,
-    );
-
-    // Return an array of promises, suitable for use with Promise.all().
-    return [responseDone, handlerDone];
+    return this._handle(request);
   }
+}
 
-  async _getResponse(
-    handler: StrategyHandler,
-    request: Request,
-    event: ExtendableEvent,
-  ): Promise<Response> {
-    await handler.runCallbacks('handlerWillStart', {event, request});
-
-    let response: Response | undefined = undefined;
+export class CacheFirst extends Strategy {
+  async _handle(request: Request) {
     try {
-      response = await this._handle(request, handler);
-      // The "official" Strategy subclasses all throw this error automatically,
-      // but in case a third-party Strategy doesn't, ensure that we have a
-      // consistent failure when there's no response or an error response.
-      // if (!response || response.type === 'error') {
-      //   throw new WError('no-response', {url: request.url});
-      // }
-    } catch (error) {
-      if (error instanceof Error) {
-        for (const callback of handler.iterateCallbacks('handlerDidError')) {
-          response = await callback({error, event, request});
-          if (response) {
-            break;
-          }
-        }
-      }
+      const cache = await caches.open(this.cacheName);
 
-      if (!response) {
-        throw error;
-      } else if (process.env.NODE_ENV !== 'production') {
-        // logger.log(
-        //   `While responding to '${getFriendlyURL(request.url)}', ` +
-        //     `an ${
-        //       error instanceof Error ? error.toString() : ''
-        //     } error occurred. Using a fallback response provided by ` +
-        //     `a handlerDidError plugin.`,
-        // );
-      }
-    }
-
-    for (const callback of handler.iterateCallbacks('handlerWillRespond')) {
-      //@ts-ignore
-      response = await callback({event, request, response});
-    }
-
-    return response!;
-  }
-
-  async _awaitComplete(
-    responseDone: Promise<Response>,
-    handler: StrategyHandler,
-    request: Request,
-    event: ExtendableEvent,
-  ): Promise<void> {
-    let response;
-    let error;
-
-    try {
-      response = await responseDone;
-    } catch (error) {
-      // Ignore errors, as response errors should be caught via the `response`
-      // promise above. The `done` promise will only throw for errors in
-      // promises passed to `handler.waitUntil()`.
-    }
-
-    try {
-      await handler.runCallbacks('handlerDidRespond', {
-        event,
-        request,
-        response,
+      const cachedResponse = await cache.match(request, {
+        ignoreVary: this.matchOptions?.ignoreVary || false,
+        ignoreSearch: this.matchOptions?.ignoreSearch || false,
       });
-      await handler.doneWaiting();
-    } catch (waitUntilError) {
-      if (waitUntilError instanceof Error) {
-        error = waitUntilError;
+      if (cachedResponse) {
+        return cachedResponse;
       }
-    }
 
-    await handler.runCallbacks('handlerDidComplete', {
-      event,
-      request,
-      response,
-      error: error as Error,
-    });
-    handler.destroy();
+      const response = await fetch(request.clone());
+      await cache.put(request, response.clone());
 
-    if (error) {
+      return response;
+    } catch (error) {
+      const cachedResponse = await caches.match(request, {
+        ignoreVary: this.matchOptions?.ignoreVary || false,
+        ignoreSearch: this.matchOptions?.ignoreSearch || false,
+      });
+
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+
       throw error;
     }
+  }
+}
+
+export interface NetworkFirstOptions extends StrategyOptions {
+  networkTimeoutSeconds?: number;
+}
+
+export class NetworkFirst extends Strategy {
+  private readonly _networkTimeoutSeconds: number;
+
+  constructor(options: NetworkFirstOptions) {
+    super(options);
+
+    // (ShafSpecs) todo: give _networkTimeoutSeconds an implementation later
+    this._networkTimeoutSeconds = options.networkTimeoutSeconds || 30;
+  }
+
+  async _handle(request: Request) {
+    try {
+      const cache = await caches.open(this.cacheName);
+
+      const response = await fetch(request.clone());
+      await cache.put(request, response.clone());
+
+      return response;
+    } catch (error) {
+      const cachedResponse = await caches.match(request, {
+        ignoreVary: this.matchOptions?.ignoreVary || false,
+        ignoreSearch: this.matchOptions?.ignoreSearch || false,
+      });
+
+      if (cachedResponse) {
+        cachedResponse.headers.set("X-Remix-Worker", "yes");
+        return cachedResponse;
+      }
+
+      return new Response(JSON.stringify({ message: "Network Error" }), {
+        status: 500,
+        headers: { "X-Remix-Catch": "yes", "X-Remix-Worker": "yes" },
+      });
+    }
+  }
+}
+
+export interface NetworkOnlyOptions
+  extends Omit<StrategyOptions, "cacheName" | "matchOptions"> {
+  // (ShafSpecs) todo: give _networkTimeoutSeconds an implementation later
+  networkTimeoutSeconds?: number;
+}
+
+export class NetworkOnly extends Strategy {
+  private readonly _networkTimeoutSeconds: number;
+
+  constructor(options: NetworkOnlyOptions = {}) {
+    super(options);
+
+    // (ShafSpecs) todo: give _networkTimeoutSeconds an implementation later
+    this._networkTimeoutSeconds = options.networkTimeoutSeconds || 30;
+  }
+
+  async _handle(request: Request) {
+    return fetch(request.clone());
+  }
+}
+
+export class CacheOnly extends Strategy {
+  async _handle(request: Request) {
+    const cache = await caches.open(this.cacheName);
+
+    const cachedResponse = await cache.match(request, {
+      ignoreVary: this.matchOptions?.ignoreVary || false,
+      ignoreSearch: this.matchOptions?.ignoreSearch || false,
+    });
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+
+    throw new Error("No cached response found");
   }
 }
