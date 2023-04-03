@@ -44,34 +44,39 @@ export function loadServiceWorker(
             scope: options.scope,
           })
           .then(() => navigator.serviceWorker.ready)
-          .then((registration) => {
-            if (registration.waiting) {
-              return registration.waiting;
-            }
+          /**
+           * Do we really need this??? We aren't using it anywhere or returning the registration.
+           */
 
-            return new Promise<ServiceWorker>((resolve) => {
-              if (registration.installing) {
-                registration.installing.addEventListener("statechange", () => {
-                  if (registration.waiting) {
-                    resolve(registration.waiting);
-                  }
-                });
-              } else {
-                registration.addEventListener("updatefound", () => {
-                  if (registration.installing) {
-                    registration.installing.addEventListener(
-                      "statechange",
-                      () => {
-                        if (registration.waiting) {
-                          resolve(registration.waiting);
-                        }
-                      }
-                    );
-                  }
-                });
-              }
-            });
-          })
+          // .then((registration) => {
+          //   if (registration.waiting) {
+          //     return registration.waiting;
+          //   }
+
+          //   return new Promise<ServiceWorker>((resolve) => {
+          //     if (registration.installing) {
+          //       registration.installing.addEventListener("statechange", () => {
+          //         if (registration.waiting) {
+          //           resolve(registration.waiting);
+          //         }
+          //       });
+          //     } else {
+          //       registration.addEventListener("updatefound", () => {
+          //         if (registration.installing) {
+          //           registration.installing.addEventListener(
+          //             "statechange",
+          //             () => {
+          //               if (registration.waiting) {
+          //                 resolve(registration.waiting);
+          //               }
+          //             }
+          //           );
+          //         }
+          //       });
+          //     }
+          //   });
+          // })
+
           .then(() => {
             // (ShafSpecs) Is adding this debug too much?
             // logger.debug("Syncing manifest...");
@@ -117,8 +122,4 @@ export function loadServiceWorker(
       window.addEventListener("load", register);
     }
   }
-}
-
-export function claimClient(): void {
-  self.addEventListener("activate", () => self.clients.claim());
 }
