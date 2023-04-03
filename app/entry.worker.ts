@@ -1,17 +1,16 @@
 /// <reference lib="WebWorker" />
 
-// BUGS: Doesn't work offline now for some reason, fix later 🙄
-// FIX: Initializing a new instance of the strategy for each request is not a good idea
-// Try to find a way to cram the strategy into a method and still allow for flexibility
-// and extensibility.
-// Doesn't seem to fix it.
+// BUGS: None for now.
 // 
 // FIXES: 
 //   - Fixed the loader not cahing issue, was caused by `matchRequest` function
-
+//   - Wasn't working offline. Issue was I mistakenly used `event.waitUntil` in the `fetch` event
+//     listener 
+//
 // This worker showcases most of the progress made; strategies, custom strategies;
 // custom handlers, custom matchers, etc. Still a lot more to be improved on.
 
+import { logger } from "./worker/_private";
 import {
   isAssetRequest,
   isDocumentRequest,
@@ -77,7 +76,7 @@ class ImageCacheStrategy extends Strategy {
 
 const fetchHandler = async (event: FetchEvent): Promise<Response> => {
   const { request } = event;
-  const match = matchRequest(request);
+  // const match = matchRequest(request);
 
   let strategy: Strategy;
 
@@ -98,7 +97,6 @@ const fetchHandler = async (event: FetchEvent): Promise<Response> => {
       cacheName: IMAGES,
       matchOptions: {
         ignoreSearch: true,
-        ignoreVary: true,
       },
     });
 
@@ -189,23 +187,12 @@ self.addEventListener("install", (event) => {
   event.waitUntil(self.skipWaiting());
 });
 
-self.addEventListener("activate", () => {
-  self.clients.claim();
+self.addEventListener("activate", (event) => {
+  event.waitUntil(self.clients.claim());
 });
 
 self.addEventListener("fetch", (event) => {
-  event.waitUntil((async () => {
-    let result = {} as
-      | { error: unknown; response: undefined }
-      | { error: undefined; response: Response };
-    try {
-      result.response = await fetchHandler(event);
-    } catch (error) {
-      result.error = error;
-    }
-
-    return result.response;
-  })());
+  event.respondWith(fetchHandler(event));
 });
 
 self.addEventListener("message", (event) => {
