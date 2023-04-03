@@ -1,9 +1,13 @@
+import { logger } from "./_private";
+import { isDev } from "./common";
+import { StrategyPlugin } from "./plugin";
+
 export interface CacheQueryMatchOptions
   extends Omit<CacheQueryOptions, "cacheName" | "ignoreMethod"> {}
 
 export interface StrategyOptions {
   cacheName?: string;
-  plugins?: any[]; // (ShafSpecs) todo: change this to a proper type later
+  plugins?: StrategyPlugin[]; // (ShafSpecs) todo: change this to a proper type later
   matchOptions?: CacheQueryMatchOptions;
 }
 
@@ -19,13 +23,13 @@ const isHttpRequest = (request: Request): boolean => {
 
 export abstract class Strategy {
   protected cacheName: string;
-  protected plugins: any[];
+  protected plugins: StrategyPlugin[];
   protected matchOptions?: CacheQueryMatchOptions;
 
   constructor({
     cacheName = `cache-${Math.random() * 10_000}`,
     plugins = [],
-    matchOptions,
+    matchOptions = {},
   }: StrategyOptions) {
     this.cacheName = cacheName;
     this.plugins = plugins || [];
@@ -34,12 +38,15 @@ export abstract class Strategy {
 
   protected abstract _handle(request: Request): Promise<Response>;
 
+  // Can you return null???
   async handle(request: Request): Promise<Response> {
     if (!isHttpRequest(request)) {
       // (ShafSpecs) todo: Handle this better. Can't be throwing errors
       // all over the user app if the SW intercepts an extension request
       throw new Error("The request is not an HTTP request");
     }
+
+    // Initialize and handle plugins here
 
     return this._handle(request);
   }
@@ -55,6 +62,9 @@ export class CacheFirst extends Strategy {
         ignoreSearch: this.matchOptions?.ignoreSearch || false,
       });
       if (cachedResponse) {
+        if (isDev()) {
+          logger.log("Serving", request.url, "from cache")
+        }
         return cachedResponse;
       }
 
@@ -71,6 +81,8 @@ export class CacheFirst extends Strategy {
       if (cachedResponse) {
         return cachedResponse;
       }
+
+      logger.error("Error while fetching", request.url, ":", error);
 
       throw error;
     }
