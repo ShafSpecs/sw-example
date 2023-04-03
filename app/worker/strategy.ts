@@ -7,7 +7,7 @@ export interface CacheQueryMatchOptions
 
 export interface StrategyOptions {
   cacheName?: string;
-  plugins?: StrategyPlugin[]; // (ShafSpecs) todo: change this to a proper type later
+  plugins?: StrategyPlugin[];
   matchOptions?: CacheQueryMatchOptions;
 }
 
@@ -38,15 +38,13 @@ export abstract class Strategy {
 
   protected abstract _handle(request: Request): Promise<Response>;
 
-  // Can you return null???
+  // Can you return null or a custom, handled error???
   async handle(request: Request): Promise<Response> {
     if (!isHttpRequest(request)) {
       // (ShafSpecs) todo: Handle this better. Can't be throwing errors
       // all over the user app if the SW intercepts an extension request
       throw new Error("The request is not an HTTP request");
     }
-
-    // Initialize and handle plugins here
 
     return this._handle(request);
   }
