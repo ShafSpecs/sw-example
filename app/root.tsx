@@ -15,7 +15,7 @@ import { useSWEffect } from "./useSW";
 import type { LinksFunction, MetaFunction } from "@remix-run/node";
 
 import style from "./styles/index.css";
-import { useEffect } from "react";
+import { Fragment, useEffect } from "react";
 
 export const links: LinksFunction = () => {
   return [
@@ -42,34 +42,34 @@ export default function App() {
   }
 
   useSWEffect();
-  useEffect(() => {
-    const manifest = window.__remixManifest;
-    const match = matches.filter((route) => {
-      if (route.data) {
-        return (
-          Object.values(route.data!).filter((elem) => {
-            return isPromise(elem);
-          }).length === 0
-        );
-      }
-      return true;
-    })
+  // useEffect(() => {
+  //   const manifest = window.__remixManifest;
+  //   const match = matches.filter((route) => {
+  //     if (route.data) {
+  //       return (
+  //         Object.values(route.data!).filter((elem) => {
+  //           return isPromise(elem);
+  //         }).length === 0
+  //       );
+  //     }
+  //     return true;
+  //   })
 
-    let a = []
+  //   let a = []
 
-    for (const match of matches) {
-      if (manifest.routes[match.id].hasLoader) {
-        const params = new URLSearchParams(location.search);
-        params.set("_data", match.id);
-        let search = params.toString();
-        search = search ? `?${search}` : "";
-        const url = location.pathname + search + location.hash;
-        a.push({ params, search, url })
-      }
-    }
+  //   for (const match of matches) {
+  //     if (manifest.routes[match.id].hasLoader) {
+  //       const params = new URLSearchParams(location.search);
+  //       params.set("_data", match.id);
+  //       let search = params.toString();
+  //       search = search ? `?${search}` : "";
+  //       const url = location.pathname + search + location.hash;
+  //       a.push({ params, search, url })
+  //     }
+  //   }
 
-    console.log(a)
-  })
+  //   console.log(a)
+  // })
 
 return (
   <html lang="en">
@@ -99,7 +99,7 @@ export function CatchBoundary() {
 
 export function ErrorBoundary({ error }: { error: any }) {
   console.log(error)
-  return <div>
+  return <Fragment>
     <h1>{error.message}</h1>
-  </div>
+  </Fragment>
 }
