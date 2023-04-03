@@ -2,6 +2,9 @@ import type { Strategy } from "./strategy";
 
 // todo: Add more typings to the callbacks. This is quite ugly
 
+// Called it strategy plugin, because I want to 
+// leave chance for more plugins for other things, 
+// like handling messages or smthg like that. Dunno yet
 export interface StrategyPlugin {
   // Called before a request is made to the network or cache.
   // Can be used to modify the request or return a different request, for example.
