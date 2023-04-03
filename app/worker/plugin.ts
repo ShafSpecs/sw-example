@@ -1,5 +1,3 @@
-import type { Strategy } from "./strategy";
-
 // todo: Add more typings to the callbacks. This is quite ugly, I wasn't in the mood for 
 // writing all the types for the callbacks. ==TODO==
 
