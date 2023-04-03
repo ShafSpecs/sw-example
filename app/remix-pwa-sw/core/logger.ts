@@ -5,7 +5,6 @@
 
 /// <reference lib="WebWorker" />
 
-export type {};
 declare let self: ServiceWorkerGlobalScope;
 
 declare global {

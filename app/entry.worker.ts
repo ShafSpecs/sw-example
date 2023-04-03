@@ -16,9 +16,9 @@ import {
   isAssetRequest,
   isDocumentRequest,
   isLoaderRequest,
-} from "./worker/common";
-import { Strategy } from "./worker/strategy";
-import { CacheFirst, NetworkFirst } from "./worker/strategy";
+} from "./remix-pwa-sw";
+import { Strategy } from "./remix-pwa-sw";
+import { CacheFirst, NetworkFirst } from "./remix-pwa-sw";
 
 export type {};
 declare let self: ServiceWorkerGlobalScope;
@@ -27,6 +27,7 @@ const PAGES = "page-cache";
 const DATA = "data-cache";
 const ASSETS = "assets-cache";
 const IMAGES = "images-cache";
+const StaticAssets = ['/build/', '/icons/']
 
 // A custom case for cahing (cache images separately)
 const isImageRequest = (request: Request) => {
@@ -40,7 +41,7 @@ const matchRequest = (
   switch (true) {
     case isImageRequest(request):
     case isLoaderRequest(request)?.valueOf():
-    case isAssetRequest(request):
+    case isAssetRequest(request, StaticAssets):
     case isDocumentRequest(request):
       return true;
     default:
@@ -105,7 +106,7 @@ const fetchHandler = async (event: FetchEvent): Promise<Response> => {
     return strategy.handle(request);
   }
 
-  if (isAssetRequest(request)) {
+  if (isAssetRequest(request, StaticAssets)) {
     strategy = new CacheFirst({
       cacheName: ASSETS,
       matchOptions: {
