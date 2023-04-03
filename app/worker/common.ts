@@ -26,3 +26,7 @@ export function isLoaderRequest(request: Request): string | false | null {
   const url = new URL(request.url);
   return isMethod(request, ["get"]) && url.searchParams.get("_data");
 }
+
+export function isDev(): boolean {
+  return process.env.NODE_ENV === "development";
+}
