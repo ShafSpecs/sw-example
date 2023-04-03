@@ -1,6 +1,7 @@
 import type { Strategy } from "./strategy";
 
-// todo: Add more typings to the callbacks. This is quite ugly
+// todo: Add more typings to the callbacks. This is quite ugly, I wasn't in the mood for 
+// writing all the types for the callbacks. ==TODO==
 
 // Called it strategy plugin, because I want to 
 // leave chance for more plugins for other things, 
