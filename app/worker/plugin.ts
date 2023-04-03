@@ -4,7 +4,7 @@
 // Called it strategy plugin, because I want to 
 // leave chance for more plugins for other things, 
 // like handling messages or smthg like that. Dunno yet
-export interface StrategyPlugin {
+export declare interface StrategyPlugin {
   // Called before a request is made to the network or cache.
   // Can be used to modify the request or return a different request, for example.
   requestWillFetch?: (options: {request: Request}) => Promise<Request>;
