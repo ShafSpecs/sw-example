@@ -6,7 +6,7 @@
  * there.
  */
 
-import { isAssetRequest, isDocumentRequest, isLoaderRequest } from "./common";
+import { isAssetRequest, isDocumentRequest, isLoaderRequest } from "../core/common";
 import type {
   CacheQueryMatchOptions,
   NetworkFirstOptions,

@@ -10,14 +10,14 @@
 // This worker showcases most of the progress made; strategies, custom strategies;
 // custom handlers, custom matchers, etc. Still a lot more to be improved on.
 
-import { logger } from "./remix-pwa-sw/_private";
+import { logger } from "./remix-pwa-sw/core/_private";
 import {
   isAssetRequest,
   isDocumentRequest,
   isLoaderRequest,
-} from "./remix-pwa-sw/common";
-import { Strategy } from "./remix-pwa-sw/strategy";
-import { CacheFirst, NetworkFirst } from "./remix-pwa-sw/strategy";
+} from "./remix-pwa-sw/core/common";
+import { Strategy } from "./remix-pwa-sw/handler/strategy";
+import { CacheFirst, NetworkFirst } from "./remix-pwa-sw/handler/strategy";
 
 export type {};
 declare let self: ServiceWorkerGlobalScope;

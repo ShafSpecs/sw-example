@@ -1,6 +1,6 @@
-import { logger } from "./_private";
-import { isDev } from "./common";
-import type { StrategyPlugin } from "./plugin";
+import { logger } from "../core/_private";
+import { isDev } from "../core/common";
+import type { StrategyPlugin } from "../plugins/plugin";
 
 export interface CacheQueryMatchOptions
   extends Omit<CacheQueryOptions, "cacheName" | "ignoreMethod"> {}
