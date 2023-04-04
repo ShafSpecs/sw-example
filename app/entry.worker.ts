@@ -16,7 +16,7 @@ import {
   isDocumentRequest,
   isLoaderRequest,
 } from "./remix-pwa-sw/core/common";
-import { Strategy } from "./remix-pwa-sw/handler/strategy";
+import { CacheStrategy } from "./remix-pwa-sw/handler/strategy";
 import { CacheFirst, NetworkFirst } from "./remix-pwa-sw/handler/strategy";
 
 export type {};
@@ -52,7 +52,7 @@ const matchRequest = (
 // This strategy would serve from cache and update
 // the cache with network in the background - kinda 
 // (StaleWhileRevalidate)
-class ImageCacheStrategy extends Strategy {
+class ImageCacheStrategy extends CacheStrategy {
   async _handle(request: Request) {
     const cache = await caches.open(IMAGES);
     const cachedResponse = await cache.match(request);
@@ -78,7 +78,7 @@ const fetchHandler = async (event: FetchEvent): Promise<Response> => {
   const { request } = event;
   // const match = matchRequest(request);
 
-  let strategy: Strategy;
+  let strategy: CacheStrategy;
 
   // Run through the matched request and use the appropriate strategy
   // to handle the request.

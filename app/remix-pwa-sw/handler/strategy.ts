@@ -8,7 +8,7 @@ import type { StrategyPlugin } from "../plugins/plugin";
 export interface CacheQueryMatchOptions
   extends Omit<CacheQueryOptions, "cacheName" | "ignoreMethod"> {}
 
-export interface StrategyOptions {
+export interface CacheStrategyOptions {
   cacheName?: string;
   plugins?: StrategyPlugin[];
   matchOptions?: CacheQueryMatchOptions;
@@ -24,7 +24,7 @@ const isHttpRequest = (request: Request): boolean => {
   return request.url.startsWith("http");
 };
 
-export abstract class Strategy {
+export abstract class CacheStrategy {
   protected cacheName: string;
   protected plugins: StrategyPlugin[];
   protected matchOptions?: CacheQueryMatchOptions;
@@ -33,7 +33,7 @@ export abstract class Strategy {
     cacheName = `cache-${Math.random() * 10_000}`,
     plugins = [],
     matchOptions = {},
-  }: StrategyOptions) {
+  }: CacheStrategyOptions) {
     this.cacheName = cacheName;
     this.plugins = plugins || [];
     this.matchOptions = matchOptions || {};
@@ -53,7 +53,7 @@ export abstract class Strategy {
   }
 }
 
-export class CacheFirst extends Strategy {
+export class CacheFirst extends CacheStrategy {
   async _handle(request: Request) {
     let response = await this.getFromCache(request);
 
@@ -157,11 +157,11 @@ export interface FetchListenerEnv {
   state?: FetchListenerEnvState;
 }
 
-export interface NetworkFirstOptions extends StrategyOptions {
+export interface NetworkFirstOptions extends CacheStrategyOptions {
   networkTimeoutSeconds?: number;
 }
 
-export class NetworkFirst extends Strategy {
+export class NetworkFirst extends CacheStrategy {
   private fetchListenerEnv: FetchListenerEnv;
   private readonly _networkTimeoutSeconds: number;
 
@@ -239,12 +239,12 @@ export class NetworkFirst extends Strategy {
 }
 
 export interface NetworkOnlyOptions
-  extends Omit<StrategyOptions, "cacheName" | "matchOptions"> {
+  extends Omit<CacheStrategyOptions, "cacheName" | "matchOptions"> {
   // (ShafSpecs) todo: give _networkTimeoutSeconds an implementation later
   networkTimeoutSeconds?: number;
 }
 
-export class NetworkOnly extends Strategy {
+export class NetworkOnly extends CacheStrategy {
   private fetchListenerEnv: FetchListenerEnv;
   private readonly _networkTimeoutSeconds: number;
 
@@ -321,7 +321,7 @@ export class NetworkOnly extends Strategy {
   }
 }
 
-export class CacheOnly extends Strategy {
+export class CacheOnly extends CacheStrategy {
   async _handle(request: Request) {
     const cache = await caches.open(this.cacheName);
 

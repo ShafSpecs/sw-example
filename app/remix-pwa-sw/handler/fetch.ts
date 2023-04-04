@@ -11,7 +11,7 @@ import type {
   CacheQueryMatchOptions,
   NetworkFirstOptions,
   NetworkOnlyOptions,
-  Strategy,
+  CacheStrategy,
 } from "./strategy";
 import { NetworkFirst } from "./strategy";
 
@@ -55,7 +55,7 @@ export const defaultFetchHandler = async (event: FetchEvent): Promise<Response> 
 };
 
 export interface FetchHandlerOptions {
-  cacheStrategy?: Strategy;
+  cacheStrategy?: CacheStrategy;
   matchOptions?:
     | CacheQueryMatchOptions
     | NetworkOnlyOptions
