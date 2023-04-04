@@ -10,7 +10,7 @@ import {
   useLocation,
   useMatches,
 } from "@remix-run/react";
-import { useSWEffect } from "./useSW";
+import { useSWEffect } from "./remix-pwa-sw/react/hooks/useSW";
 
 import type { LinksFunction, MetaFunction } from "@remix-run/node";
 
