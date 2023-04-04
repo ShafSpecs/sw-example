@@ -30,3 +30,12 @@ export function isLoaderRequest(request: Request): string | false | null {
 export function isDev(): boolean {
   return process.env.NODE_ENV === "development";
 }
+
+export function toError(error: unknown): Error {
+  if (error instanceof Error) {
+    return error;
+  }
+
+  // return new Error(String(error));
+  return error as Error;
+}
