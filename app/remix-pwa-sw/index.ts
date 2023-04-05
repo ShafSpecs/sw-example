@@ -1,11 +1,11 @@
-export {
-    matchRequest
-} from './fetch'
+export { matchRequest } from "./fetch";
 
 export {
-    isAssetRequest,
-    isDocumentRequest,
-    isLoaderRequest
-} from './core'
+  isAssetRequest,
+  isDocumentRequest,
+  isLoaderRequest,
+  handlePush,
+  handleMessage,
+} from "./core";
 
-export * from './strategy'
+export * from "./strategy";

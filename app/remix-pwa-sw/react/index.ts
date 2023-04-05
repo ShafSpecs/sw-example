@@ -1,2 +1,2 @@
-export { useSWEffect } from './sw-hook'
-export { loadServiceWorker } from './loader'
+export { useSWEffect } from "./sw-hook";
+export { loadServiceWorker } from "./loader";
