@@ -1,216 +1,58 @@
 /// <reference lib="WebWorker" />
 
-// BUGS: Doesn't work offline now for some reason, fix later 🙄
-// FIX: Initializing a new instance of the strategy for each request is not a good idea
-// Try to find a way to cram the strategy into a method and still allow for flexibility
-// and extensibility.
-// Doesn't seem to fix it.
-// 
-// FIXES: 
-//   - Fixed the loader not cahing issue, was caused by `matchRequest` function
-
-// This worker showcases most of the progress made; strategies, custom strategies;
-// custom handlers, custom matchers, etc. Still a lot more to be improved on.
-
 import {
-  isAssetRequest,
-  isDocumentRequest,
-  isLoaderRequest,
-} from "./remix-pwa-sw";
-import { Strategy } from "./remix-pwa-sw";
-import { CacheFirst, NetworkFirst } from "./remix-pwa-sw";
+  matchRequest,
+  handlePush,
+  handleMessage,
+  CacheFirst,
+  NetworkFirst,
+} from "~/remix-pwa-sw";
 
-export type {};
 declare let self: ServiceWorkerGlobalScope;
 
 const PAGES = "page-cache";
 const DATA = "data-cache";
 const ASSETS = "assets-cache";
-const IMAGES = "images-cache";
-const StaticAssets = ['/build/', '/icons/']
+const StaticAssets = ["/build/", "/icons/"];
 
-// A custom case for cahing (cache images separately)
-const isImageRequest = (request: Request) => {
-  return request.destination === "image";
-};
-
-// Custom matcher to match the incoming request
-const matchRequest = (
-  request: Request
-): boolean => {
-  switch (true) {
-    case isImageRequest(request):
-    case isLoaderRequest(request)?.valueOf():
-    case isAssetRequest(request, StaticAssets):
-    case isDocumentRequest(request):
-      return true;
-    default:
-      return false;
-  }
-};
-
-// ---- Example ----
-// Creating a custom strategy for the images
-// This strategy would serve from cache and update
-// the cache with network in the background - kinda 
-// (StaleWhileRevalidate)
-class ImageCacheStrategy extends Strategy {
-  async _handle(request: Request) {
-    const cache = await caches.open(IMAGES);
-    const cachedResponse = await cache.match(request);
-    if (cachedResponse) {
-      const response = await fetch(request);
-      if (response.status === 200) {
-        await cache.put(request, response.clone());
-      }
-
-      return response;
-    } else {
-      const response = await fetch(request);
-      if (response.status === 200) {
-        await cache.put(request, response.clone());
-      }
-
-      return response;
-    }
-  }
-}
+const assetHandler = new CacheFirst({ cacheName: ASSETS });
+const pageHandler = new NetworkFirst({ cacheName: PAGES });
+const dataHandler = new NetworkFirst({ cacheName: DATA, isLoader: true });
 
 const fetchHandler = async (event: FetchEvent): Promise<Response> => {
   const { request } = event;
-  const match = matchRequest(request);
+  const match = matchRequest(request, StaticAssets);
 
-  let strategy: Strategy;
-
-  // Run through the matched request and use the appropriate strategy
-  // to handle the request.
-  //
-  // P.S.: Still open to better implementations for this. Is possible, wrap into
-  // functions instead of initializing the strategy in code directly?
-  // 
-  // Btw, might seem weird that I'm matching and doing conditionals after, 
-  // that's bcus I changed the implementation midway. It was previously switch 
-  // case, but I changed it to if-else to make it more readable and fix some weird bug.
-  // 
-  // Also, this is not recommended. Don't cache images directly like this. Eats up browser 
-  // storage quickly. This is just for showcase purposes.
-  if (isImageRequest(request)) {
-    strategy = new ImageCacheStrategy({
-      cacheName: IMAGES,
-      matchOptions: {
-        ignoreSearch: true,
-        ignoreVary: true,
-      },
-    });
-
-    return strategy.handle(request);
+  switch (match) {
+    case "asset":
+      return assetHandler.handle(request);
+    case "document":
+      return pageHandler.handle(request);
+    case "loader":
+      return dataHandler.handle(request);
+    default:
+      return fetch(request.clone());
   }
-
-  if (isAssetRequest(request, StaticAssets)) {
-    strategy = new CacheFirst({
-      cacheName: ASSETS,
-      matchOptions: {
-        ignoreSearch: true,
-        ignoreVary: true,
-      },
-    });
-
-    return strategy.handle(request);
-  }
-
-  if (isLoaderRequest(request)) {
-    strategy = new NetworkFirst({
-      cacheName: DATA,
-    });
-
-    return strategy.handle(request);
-  }
-
-  if (isDocumentRequest(request)) {
-    strategy = new CacheFirst({
-      cacheName: PAGES
-    });
-
-    return strategy.handle(request);
-  }
-
-  return fetch(request.clone());
-};
-
-const messageHandler = async (event: ExtendableMessageEvent) => {
-  const { data } = event;
-  let cachePromises: Map<string, Promise<void>> = new Map();
-
-  if (data.type === "REMIX_NAVIGATION") {
-    let { isMount, location, matches, manifest } = data;
-    let documentUrl = location.pathname + location.search + location.hash;
-
-    let [dataCache, documentCache, existingDocument] = await Promise.all([
-      caches.open(DATA),
-      caches.open(PAGES),
-      caches.match(documentUrl),
-    ]);
-
-    if (!existingDocument || !isMount) {
-      // debug("Caching document for", documentUrl);
-      cachePromises.set(
-        documentUrl,
-        documentCache.add(documentUrl).catch((error) => {
-          // debug(`Failed to cache document for ${documentUrl}:`, error);
-        })
-      );
-    }
-
-    if (isMount) {
-      for (let match of matches) {
-        if (manifest.routes[match.id].hasLoader) {
-          let params = new URLSearchParams(location.search);
-          params.set("_data", match.id);
-          let search = params.toString();
-          search = search ? `?${search}` : "";
-          let url = location.pathname + search + location.hash;
-          if (!cachePromises.has(url)) {
-            // debug("Caching data for", url);
-            cachePromises.set(
-              url,
-              dataCache.add(url).catch((error) => {
-                // debug(`Failed to cache data for ${url}:`, error);
-              })
-            );
-          }
-        }
-      }
-    }
-  }
-
-  await Promise.all(cachePromises.values());
 };
 
 self.addEventListener("install", (event) => {
   event.waitUntil(self.skipWaiting());
 });
 
-self.addEventListener("activate", () => {
-  self.clients.claim();
+self.addEventListener("activate", (event) => {
+  event.waitUntil(self.clients.claim());
 });
 
 self.addEventListener("fetch", (event) => {
-  event.waitUntil((async () => {
-    let result = {} as
-      | { error: unknown; response: undefined }
-      | { error: undefined; response: Response };
-    try {
-      result.response = await fetchHandler(event);
-    } catch (error) {
-      result.error = error;
-    }
-
-    return result.response;
-  })());
+  event.respondWith(fetchHandler(event));
 });
 
 self.addEventListener("message", (event) => {
-  event.waitUntil(messageHandler(event));
+  event.waitUntil(
+    handleMessage(event, { dataCache: DATA, documentCache: PAGES })
+  );
 });
 
-self.addEventListener("push", (event) => {});
+self.addEventListener("push", (event) => {
+  event.waitUntil(handlePush(event));
+});

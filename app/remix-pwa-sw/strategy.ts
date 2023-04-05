@@ -2,7 +2,8 @@ export interface CacheQueryMatchOptions
   extends Omit<CacheQueryOptions, "cacheName" | "ignoreMethod"> {}
 
 export interface StrategyOptions {
-  cacheName?: string;
+  cacheName: string;
+  isLoader?: boolean;
   plugins?: any[]; // (ShafSpecs) todo: change this to a proper type later
   matchOptions?: CacheQueryMatchOptions;
 }
@@ -21,15 +22,18 @@ export abstract class Strategy {
   protected cacheName: string;
   protected plugins: any[];
   protected matchOptions?: CacheQueryMatchOptions;
+  protected isLoader: boolean;
 
   constructor({
-    cacheName = `cache-${Math.random() * 10_000}`,
+    cacheName,
+    isLoader = false,
     plugins = [],
     matchOptions,
   }: StrategyOptions) {
     this.cacheName = cacheName;
     this.plugins = plugins || [];
     this.matchOptions = matchOptions || {};
+    this.isLoader = isLoader;
   }
 
   protected abstract _handle(request: Request): Promise<Response>;
@@ -69,10 +73,16 @@ export class CacheFirst extends Strategy {
       });
 
       if (cachedResponse) {
+        this.isLoader && cachedResponse.headers.set("X-Remix-Worker", "yes");
         return cachedResponse;
       }
 
-      throw error;
+      const headers = { "X-Remix-Catch": "yes", "X-Remix-Worker": "yes" };
+
+      return new Response(JSON.stringify({ message: "Network Error" }), {
+        status: 500,
+        ...(this.isLoader ? { headers } : {}),
+      });
     }
   }
 }
@@ -105,14 +115,18 @@ export class NetworkFirst extends Strategy {
         ignoreSearch: this.matchOptions?.ignoreSearch || false,
       });
 
+      console.log(cachedResponse);
+
       if (cachedResponse) {
-        cachedResponse.headers.set("X-Remix-Worker", "yes");
+        this.isLoader && cachedResponse.headers.set("X-Remix-Worker", "yes");
         return cachedResponse;
       }
 
+      const headers = { "X-Remix-Catch": "yes", "X-Remix-Worker": "yes" };
+
       return new Response(JSON.stringify({ message: "Network Error" }), {
         status: 500,
-        headers: { "X-Remix-Catch": "yes", "X-Remix-Worker": "yes" },
+        ...(this.isLoader ? { headers } : {}),
       });
     }
   }
@@ -128,14 +142,24 @@ export class NetworkOnly extends Strategy {
   private readonly _networkTimeoutSeconds: number;
 
   constructor(options: NetworkOnlyOptions = {}) {
-    super(options);
+    super({ cacheName: "", ...options });
 
     // (ShafSpecs) todo: give _networkTimeoutSeconds an implementation later
     this._networkTimeoutSeconds = options.networkTimeoutSeconds || 30;
   }
 
   async _handle(request: Request) {
-    return fetch(request.clone());
+    try {
+      const response = fetch(request.clone());
+      return response;
+    } catch (error) {
+      const headers = { "X-Remix-Catch": "yes", "X-Remix-Worker": "yes" };
+
+      return new Response(JSON.stringify({ message: "Network Error" }), {
+        status: 500,
+        ...(this.isLoader ? { headers } : {}),
+      });
+    }
   }
 }
 
@@ -148,9 +172,15 @@ export class CacheOnly extends Strategy {
       ignoreSearch: this.matchOptions?.ignoreSearch || false,
     });
     if (cachedResponse) {
+      this.isLoader && cachedResponse.headers.set("X-Remix-Worker", "yes");
       return cachedResponse;
     }
 
-    throw new Error("No cached response found");
+    const headers = { "X-Remix-Catch": "yes", "X-Remix-Worker": "yes" };
+
+    return new Response(JSON.stringify({ message: "Not Found" }), {
+      status: 404,
+      ...(this.isLoader ? { headers } : {}),
+    });
   }
 }
