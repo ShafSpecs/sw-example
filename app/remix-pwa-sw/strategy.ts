@@ -115,8 +115,6 @@ export class NetworkFirst extends Strategy {
         ignoreSearch: this.matchOptions?.ignoreSearch || false,
       });
 
-      console.log(cachedResponse);
-
       if (cachedResponse) {
         this.isLoader && cachedResponse.headers.set("X-Remix-Worker", "yes");
         return cachedResponse;
