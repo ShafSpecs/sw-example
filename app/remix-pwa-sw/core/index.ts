@@ -1,6 +1,6 @@
 export { logger } from "./logger";
 export { handlePush } from "./push";
-export { handleMessage } from "./message";
+export { handleMessage, handleSyncRemixManifest } from "./message";
 
 export function isMethod(request: Request, methods: string[]): boolean {
   return methods.includes(request.method.toLowerCase());

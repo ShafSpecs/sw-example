@@ -6,6 +6,7 @@ export {
   isLoaderRequest,
   handlePush,
   handleMessage,
+  handleSyncRemixManifest
 } from "./core";
 
 export * from "./strategy";
