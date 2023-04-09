@@ -43,48 +43,55 @@ export default function App() {
 
   useSWEffect();
   // useEffect(() => {
-  //   const manifest = window.__remixManifest;
-  //   const match = matches.filter((route) => {
-  //     if (route.data) {
-  //       return (
-  //         Object.values(route.data!).filter((elem) => {
-  //           return isPromise(elem);
-  //         }).length === 0
-  //       );
-  //     }
-  //     return true;
-  //   })
+  //   if ("serviceWorker" in navigator) {
+  //     if (navigator.serviceWorker.controller) {
+  //       navigator.serviceWorker.controller?.postMessage({
+  //         type: "ping",
+  //         name: "remix"
+  //       });
 
-  //   let a = []
+  //       navigator.serviceWorker.addEventListener('message', event => {
+  //         // Handle the response from the service worker
+  //         const responseData = event.data;
+  //         console.log('Received response from service worker:', responseData);
+  //       });
+  //     } else {
+  //       let listener = async () => {
+  //         await navigator.serviceWorker.ready;
+  //         navigator.serviceWorker.controller?.postMessage({
+  //           type: "ping",
+  //           name: "remix",
+  //         });
+  //       };
+  //       navigator.serviceWorker.addEventListener("controllerchange", listener);
 
-  //   for (const match of matches) {
-  //     if (manifest.routes[match.id].hasLoader) {
-  //       const params = new URLSearchParams(location.search);
-  //       params.set("_data", match.id);
-  //       let search = params.toString();
-  //       search = search ? `?${search}` : "";
-  //       const url = location.pathname + search + location.hash;
-  //       a.push({ params, search, url })
+  //       navigator.serviceWorker.addEventListener('message', event => {
+  //         // Handle the response from the service worker
+  //         const responseData = event.data;
+  //         console.log('Received response from service worker:', responseData);
+  //       });
+
+  //       return () => {
+  //         navigator.serviceWorker.removeEventListener("controllerchange", listener);
+  //       };
   //     }
   //   }
+  // }, [location]);
 
-  //   console.log(a)
-  // })
-
-return (
-  <html lang="en">
-    <head>
-      <Meta />
-      <Links />
-    </head>
-    <body>
-      <Outlet />
-      <ScrollRestoration />
-      <Scripts />
-      <LiveReload />
-    </body>
-  </html>
-);
+  return (
+    <html lang="en">
+      <head>
+        <Meta />
+        <Links />
+      </head>
+      <body>
+        <Outlet />
+        <ScrollRestoration />
+        <Scripts />
+        <LiveReload />
+      </body>
+    </html>
+  );
 }
 
 export function CatchBoundary() {
