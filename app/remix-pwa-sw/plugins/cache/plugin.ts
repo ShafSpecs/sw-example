@@ -1,7 +1,7 @@
 // todo: Add more typings to the callbacks. This is quite ugly, I wasn't in the mood for
 // writing all the types for the callbacks. ==TODO==
 
-import type { CacheQueryMatchOptions } from "../handler/strategy";
+import type { CacheQueryMatchOptions } from "../../handler/strategy";
 
 // Called it strategy plugin, because I want to
 // leave chance for more plugins for other things,

@@ -2,7 +2,7 @@
 // `X-Remix-Worker`, etc.
 
 import { toError } from "../core/common";
-import type { StrategyPlugin } from "../plugins/plugin";
+import type { StrategyPlugin } from "../plugins/cache/plugin";
 
 export interface CacheQueryMatchOptions
   extends Omit<CacheQueryOptions, "cacheName" | "ignoreMethod"> {}
