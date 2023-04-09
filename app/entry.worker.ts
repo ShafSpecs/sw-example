@@ -16,6 +16,8 @@ import {
   isDocumentRequest,
   isLoaderRequest,
 } from "./remix-pwa-sw/core/common";
+import { handleFetchRequest } from "./remix-pwa-sw/handler/fetch";
+import { PingHandler, RemixMessageHandler } from "./remix-pwa-sw/handler/message";
 import { CacheStrategy } from "./remix-pwa-sw/handler/strategy";
 import { CacheFirst, NetworkFirst } from "./remix-pwa-sw/handler/strategy";
 
@@ -32,25 +34,10 @@ const isImageRequest = (request: Request) => {
   return request.destination === "image";
 };
 
-// Custom matcher to match the incoming request
-const matchRequest = (
-  request: Request
-): boolean => {
-  switch (true) {
-    case isImageRequest(request):
-    case isLoaderRequest(request)?.valueOf():
-    case isAssetRequest(request):
-    case isDocumentRequest(request):
-      return true;
-    default:
-      return false;
-  }
-};
-
 // ---- Example ----
 // Creating a custom strategy for the images
 // This strategy would serve from cache and update
-// the cache with network in the background - kinda 
+// the cache with network in the background - kinda
 // (StaleWhileRevalidate)
 class ImageCacheStrategy extends CacheStrategy {
   async _handle(request: Request) {
@@ -74,113 +61,57 @@ class ImageCacheStrategy extends CacheStrategy {
   }
 }
 
+const imageCacheStrategy = new ImageCacheStrategy({
+  cacheName: IMAGES,
+  matchOptions: {
+    ignoreSearch: true,
+  },
+});
+
+const assetCacheStrategy = new CacheFirst({
+  cacheName: ASSETS,
+  matchOptions: {
+    ignoreSearch: true,
+    ignoreVary: true,
+  },
+});
+
+const loaderCacheStrategy = new NetworkFirst({
+  cacheName: DATA,
+});
+
+const pageCacheStrategy = new CacheFirst({
+  cacheName: PAGES
+});
+
+const pingMessageHandler = new PingHandler();
+const remixMessageHandler = new RemixMessageHandler();
+
 const fetchHandler = async (event: FetchEvent): Promise<Response> => {
   const { request } = event;
-  // const match = matchRequest(request);
-
-  let strategy: CacheStrategy;
 
   // Run through the matched request and use the appropriate strategy
   // to handle the request.
-  //
-  // P.S.: Still open to better implementations for this. Is possible, wrap into
-  // functions instead of initializing the strategy in code directly?
-  // 
-  // Btw, might seem weird that I'm matching and doing conditionals after, 
-  // that's bcus I changed the implementation midway. It was previously switch 
-  // case, but I changed it to if-else to make it more readable and fix some weird bug.
   // 
   // Also, this is not recommended. Don't cache images directly like this. Eats up browser 
   // storage quickly. This is just for showcase purposes.
   if (isImageRequest(request)) {
-    strategy = new ImageCacheStrategy({
-      cacheName: IMAGES,
-      matchOptions: {
-        ignoreSearch: true,
-      },
-    });
-
-    return strategy.handle(request);
+    return handleFetchRequest(request, imageCacheStrategy)
   }
 
   if (isAssetRequest(request)) {
-    strategy = new CacheFirst({
-      cacheName: ASSETS,
-      matchOptions: {
-        ignoreSearch: true,
-        ignoreVary: true,
-      },
-    });
-
-    return strategy.handle(request);
+    return handleFetchRequest(request, assetCacheStrategy)
   }
 
   if (isLoaderRequest(request)) {
-    strategy = new NetworkFirst({
-      cacheName: DATA,
-    });
-
-    return strategy.handle(request);
+    return handleFetchRequest(request, loaderCacheStrategy)
   }
 
   if (isDocumentRequest(request)) {
-    strategy = new CacheFirst({
-      cacheName: PAGES
-    });
-
-    return strategy.handle(request);
+    return handleFetchRequest(request, pageCacheStrategy)
   }
 
   return fetch(request.clone());
-};
-
-const messageHandler = async (event: ExtendableMessageEvent) => {
-  const { data } = event;
-  let cachePromises: Map<string, Promise<void>> = new Map();
-
-  if (data.type === "REMIX_NAVIGATION") {
-    let { isMount, location, matches, manifest } = data;
-    let documentUrl = location.pathname + location.search + location.hash;
-
-    let [dataCache, documentCache, existingDocument] = await Promise.all([
-      caches.open(DATA),
-      caches.open(PAGES),
-      caches.match(documentUrl),
-    ]);
-
-    if (!existingDocument || !isMount) {
-      // debug("Caching document for", documentUrl);
-      cachePromises.set(
-        documentUrl,
-        documentCache.add(documentUrl).catch((error) => {
-          // debug(`Failed to cache document for ${documentUrl}:`, error);
-        })
-      );
-    }
-
-    if (isMount) {
-      for (let match of matches) {
-        if (manifest.routes[match.id].hasLoader) {
-          let params = new URLSearchParams(location.search);
-          params.set("_data", match.id);
-          let search = params.toString();
-          search = search ? `?${search}` : "";
-          let url = location.pathname + search + location.hash;
-          if (!cachePromises.has(url)) {
-            // debug("Caching data for", url);
-            cachePromises.set(
-              url,
-              dataCache.add(url).catch((error) => {
-                // debug(`Failed to cache data for ${url}:`, error);
-              })
-            );
-          }
-        }
-      }
-    }
-  }
-
-  await Promise.all(cachePromises.values());
 };
 
 self.addEventListener("install", (event) => {
@@ -196,7 +127,13 @@ self.addEventListener("fetch", (event) => {
 });
 
 self.addEventListener("message", (event) => {
-  event.waitUntil(messageHandler(event));
+  // event.waitUntil(pingMessageHandler.handle(event));
+  event.waitUntil(remixMessageHandler.handle(event, { 
+    'caches': {
+      DATA,
+      PAGES,
+    }
+   }));
 });
 
 self.addEventListener("push", (event) => {});
