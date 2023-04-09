@@ -1,19 +1,18 @@
 /**
  * Fetch Handlers
- * 
- * This is a confusing module tbh, asides `defaultFetchHandler`, now sure what I'm gonna do 
- * with this one. I don't want to hard-code everything for the user. Just a few helpers here and 
+ *
+ * This is a confusing module tbh, asides `defaultFetchHandler`, now sure what I'm gonna do
+ * with this one. I don't want to hard-code everything for the user. Just a few helpers here and
  * there.
  */
 
-import { isAssetRequest, isDocumentRequest, isLoaderRequest } from "../core/common";
-import type {
-  CacheQueryMatchOptions,
-  NetworkFirstOptions,
-  NetworkOnlyOptions,
-  CacheStrategy,
-} from "./strategy";
-import { NetworkFirst } from "./strategy";
+import {
+  isAssetRequest,
+  isDocumentRequest,
+  isLoaderRequest,
+} from "../core/common";
+
+import type { CacheStrategy } from "./strategy";
 
 export type MatchResponse = "loader" | "document" | "asset" | null;
 export type MatchRequest = (request: Request) => MatchResponse;
@@ -30,7 +29,9 @@ export const matchRequest: MatchRequest = (request: Request): MatchResponse => {
   }
 };
 
-export const defaultFetchHandler = async (event: FetchEvent): Promise<Response> => {
+export const defaultFetchHandler = async (
+  event: FetchEvent
+): Promise<Response> => {
   const { request } = event;
 
   if (request.method !== "GET") {
@@ -54,64 +55,9 @@ export const defaultFetchHandler = async (event: FetchEvent): Promise<Response> 
   }
 };
 
-export interface FetchHandlerOptions {
-  cacheStrategy?: CacheStrategy;
-  matchOptions?:
-    | CacheQueryMatchOptions
-    | NetworkOnlyOptions
-    | NetworkFirstOptions;
-}
-
-export interface FetchHandlerParams {
-  request: Request;
-  options?: FetchHandlerOptions;
-}
-
-export interface AssetFetchHandlerParams extends FetchHandlerParams {
-  assetUrls: string[];
-}
-
-export const handleLoaderFetch = ({
-  request,
-  options,
-}: FetchHandlerParams): Promise<Response> => {
-  const defaultStrategy = new NetworkFirst({
-    cacheName: "data-cache",
-    plugins: [],
-  });
-
-  const { cacheStrategy = defaultStrategy, matchOptions = {} } = options || {};
-
-  if (cacheStrategy === null) {
-    return fetch(request.clone());
-  }
-
-  return fetch(request.clone());
-};
-
-export const handleDocumentFetch = ({
-  request,
-  options,
-}: FetchHandlerParams): Promise<Response> => {
-  const { cacheStrategy = null, matchOptions = {} } = options || {};
-
-  if (cacheStrategy === null) {
-    return fetch(request.clone());
-  }
-
-  return fetch(request.clone());
-};
-
-export const handleAssetFetch = ({
-  request,
-  options,
-  assetUrls,
-}: AssetFetchHandlerParams): Promise<Response> => {
-  const { cacheStrategy = null, matchOptions = {} } = options || {};
-
-  if (cacheStrategy === null) {
-    return fetch(request.clone());
-  }
-
-  return fetch(request.clone());
+export const handleFetchRequest = (
+  request: Request,
+  strategy: CacheStrategy
+) => {
+  return strategy.handle(request);
 };
