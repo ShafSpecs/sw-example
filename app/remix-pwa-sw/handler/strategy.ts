@@ -1,8 +1,7 @@
 // todo: (ShafSpecs) Standardize the custom headers for `remix-pwa`
 // `X-Remix-Worker`, etc.
 
-import { logger } from "../core/_private";
-import { isDev, toError } from "../core/common";
+import { toError } from "../core/common";
 import type { StrategyPlugin } from "../plugins/plugin";
 
 export interface CacheQueryMatchOptions
@@ -29,6 +28,7 @@ export abstract class CacheStrategy {
   protected plugins: StrategyPlugin[];
   protected matchOptions?: CacheQueryMatchOptions;
 
+  // todo: (ShafSpecs) Fix this!
   constructor({
     cacheName = `cache-${Math.random() * 10_000}`,
     plugins = [],
