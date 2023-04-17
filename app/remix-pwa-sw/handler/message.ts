@@ -10,9 +10,11 @@ export interface MessageEnv {
 
 export abstract class MessageHandler {
   plugins: MessagePlugin[];
+  state: MessageEnv;
 
-  constructor(plugins: MessagePlugin[] = []) {
+  constructor(plugins: MessagePlugin[] = [], state: MessageEnv = {}) {
     this.plugins = plugins;
+    this.state = state;
   }
 
   async handle(event: ExtendableMessageEvent, state: Record<string, any> = {}) {

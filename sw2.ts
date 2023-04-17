@@ -1,5 +1,7 @@
 /// <reference lib="WebWorker" />
 
+import { isAssetRequest } from "~/remix-pwa-sw/core/common";
+
 export type {};
 
 export type LoadServiceWorkerOptions = {
@@ -104,20 +106,14 @@ export interface MatchAssetRequestProps extends MatchRequestProps {
   paths?: string[]
 }
 
-export function matchAssetRequest({ request, paths }: MatchAssetRequestProps) {
-  if (!paths) {
-    paths = [
-      "/favicon.ico",
-      "/build/"
-    ];
-  } 
+type P = {
+  url: URL;
+  request: Request;
+  event: Event;
+}
 
-  return (
-    isMethod(request, ["get"]) &&
-    paths.some((publicPath) =>
-      request.url.includes(publicPath)
-    )
-  );
+export function matchAssetRequest({ request }: P, assetUrls: string[] = ["/build/", "/icons"]) {
+  return isAssetRequest(request, assetUrls);
 }
 
 export function matchDocumentRequest({ request }: MatchRequestProps) {
