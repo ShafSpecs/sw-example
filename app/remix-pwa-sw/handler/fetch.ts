@@ -15,10 +15,10 @@ import {
 import type { CacheStrategy } from "./strategy";
 
 export type MatchResponse = "loader" | "document" | "asset" | null;
-export type MatchRequest = (request: Request) => MatchResponse;
+export type MatchRequest = (request: Request, assetUrls?: string[]) => MatchResponse;
 
-export const matchRequest: MatchRequest = (request: Request): MatchResponse => {
-  if (isAssetRequest(request)) {
+export const matchRequest: MatchRequest = (request: Request, assetUrls: string[] = ["/build/", "/icons"]): MatchResponse => {
+  if (isAssetRequest(request, assetUrls)) {
     return "asset";
   } else if (isDocumentRequest(request)) {
     return "document";
