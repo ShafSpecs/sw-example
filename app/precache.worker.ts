@@ -1,6 +1,7 @@
 /// <reference lib="WebWorker" />
 
 import { matchRequest } from "./remix-pwa-sw/handler/fetch";
+import { RemixMessageHandler } from "./remix-pwa-sw/handler/message";
 import { CacheFirst, NetworkFirst } from "./remix-pwa-sw/handler/strategy";
 
 export type {};
@@ -59,8 +60,10 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+const remixMessageHandler = new RemixMessageHandler();
+
 self.addEventListener("message", (event) => {
-  event.waitUntil(handleSyncRemixManifest(event, {
+  event.waitUntil(remixMessageHandler.handle(event, {
     dataCache: DATA,
     assetCache: ASSETS,
     documentCache: PAGES
