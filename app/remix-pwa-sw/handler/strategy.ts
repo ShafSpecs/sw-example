@@ -10,6 +10,7 @@ export interface CacheQueryMatchOptions
 export interface CacheStrategyOptions {
   cacheName?: string;
   plugins?: StrategyPlugin[];
+  isLoader?: boolean;
   matchOptions?: CacheQueryMatchOptions;
 }
 
@@ -26,17 +27,20 @@ const isHttpRequest = (request: Request): boolean => {
 export abstract class CacheStrategy {
   protected cacheName: string;
   protected plugins: StrategyPlugin[];
+  protected isLoader: boolean;
   protected matchOptions?: CacheQueryMatchOptions;
 
   // todo: (ShafSpecs) Fix this!
   constructor({
-    cacheName = `cache-${Math.random() * 10_000}`,
+    cacheName = `cache-v1`,
+    isLoader = false,
     plugins = [],
     matchOptions = {},
   }: CacheStrategyOptions) {
     this.cacheName = cacheName;
-    this.plugins = plugins || [];
-    this.matchOptions = matchOptions || {};
+    this.isLoader = isLoader;
+    this.plugins = plugins;
+    this.matchOptions = matchOptions;
   }
 
   protected abstract _handle(request: Request): Promise<Response>;
@@ -46,7 +50,10 @@ export abstract class CacheStrategy {
     if (!isHttpRequest(request)) {
       // (ShafSpecs) todo: Handle this better. Can't be throwing errors
       // all over the user app if the SW intercepts an extension request
-      throw new Error("The request is not an HTTP request");
+      // throw new Error("The request is not an HTTP request");
+
+      // (ShafSpecs) todo: also improve on this
+      return new Response("Not a HTTP request", { status: 403 });
     }
 
     return this._handle(request);
@@ -65,7 +72,14 @@ export class CacheFirst extends CacheStrategy {
       }
     }
 
-    return response || new Response("Not found", { status: 404 });
+    const headers = { "X-Remix-Catch": "yes", "X-Remix-Worker": "yes" };
+
+    return response
+      ? response
+      : new Response("Not found", {
+          status: 404,
+          headers: this.isLoader ? headers : {},
+        });
   }
 
   private async getFromCache(request: Request): Promise<Response | null> {
@@ -86,18 +100,25 @@ export class CacheFirst extends CacheStrategy {
     try {
       const response = await fetch(request);
       if (response && response.status === 200) {
+        for (const plugin of this.plugins) {
+          if (plugin.fetchDidSucceed) {
+            await plugin.fetchDidSucceed({ request, response });
+          }
+        }
+
         return response;
       }
     } catch (error) {
       if (error instanceof Error) {
         // logger.error("Error while fetching", request.url, ":", error);
-        this.handleFetchError(request, error);
+        return this.handleFetchError(request, error);
       } else {
         // logger.error("Error while fetching", request.url, ":", error);
         const err = error as Error;
-        this.handleFetchError(request, err);
+        return this.handleFetchError(request, err);
       }
     }
+
     return null;
   }
 
@@ -115,12 +136,24 @@ export class CacheFirst extends CacheStrategy {
   private async handleFetchError(
     request: Request,
     error: Error
-  ): Promise<void> {
+  ): Promise<Response | null> {
     for (const plugin of this.plugins) {
       if (plugin.fetchDidFail) {
         await plugin.fetchDidFail({ request, error });
       }
     }
+
+    const cachedResponse = await caches.match(request, {
+      ignoreVary: this.matchOptions?.ignoreVary || false,
+      ignoreSearch: this.matchOptions?.ignoreSearch || false,
+    });
+
+    if (cachedResponse) {
+      this.isLoader && cachedResponse.headers.set("X-Remix-Worker", "yes");
+      return cachedResponse;
+    }
+
+    return null;
   }
 
   private async removeExpiredEntries(cache: Cache): Promise<void> {
@@ -260,7 +293,7 @@ export class NetworkOnly extends CacheStrategy {
       return fetch(request);
     }
 
-    // `fetcher` is a custom fetch function that can de defined prior or just regular fetch 
+    // `fetcher` is a custom fetch function that can de defined prior or just regular fetch
     const fetcher = this.fetchListenerEnv.state!.fetcher || fetch;
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => {
@@ -293,30 +326,26 @@ export class NetworkOnly extends CacheStrategy {
         }
 
         return response;
-      } else {
-        for (const plugin of this.plugins) {
-          if (plugin.fetchDidFail) {
-            await plugin.fetchDidFail({
-              request,
-              error: new Error("Network request failed"),
-            });
-          }
-        }
-
-        // Re-throw error to be caught by catch block
-        throw new Error("Network request failed");
       }
+
+      // Re-throw error to be caught by catch block
+      throw new Error("Network request failed");
     } catch (error) {
       for (const plugin of this.plugins) {
         if (plugin.fetchDidFail) {
           await plugin.fetchDidFail({
             request,
-            error: new Error("Network request failed"),
+            error: toError(error),
           });
         }
       }
 
-      throw error;
+      const headers = { "X-Remix-Catch": "yes", "X-Remix-Worker": "yes" };
+
+      return new Response(JSON.stringify({ message: "Network Error" }), {
+        status: 500,
+        ...(this.isLoader ? { headers } : {}),
+      });
     }
   }
 }
@@ -328,7 +357,13 @@ export class CacheOnly extends CacheStrategy {
     let response = await cache.match(request);
 
     if (!response) {
-      throw new Error(`Unable to find response in cache.`);
+      // throw new Error(`Unable to find response in cache.`);
+      const headers = { "X-Remix-Catch": "yes", "X-Remix-Worker": "yes" };
+
+      return new Response(JSON.stringify({ message: "Not Found" }), {
+        status: 404,
+        ...(this.isLoader ? { headers } : {}),
+      });
     }
 
     for (const plugin of this.plugins) {
