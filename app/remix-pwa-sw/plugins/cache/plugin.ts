@@ -57,7 +57,7 @@ export declare interface StrategyPlugin {
     matchOptions?: CacheQueryMatchOptions;
   }) => Promise<void>;
 
-  // Called when a fetch request is made, whether it's made directly by the application or by the service worker.
+  // Called right before a fetch request is made, whether it's made directly by the application or by the service worker.
   // Can be used to modify the request, for example.
   fetchDidStart?: (options: { request: Request }) => Promise<void>;
 
@@ -66,15 +66,6 @@ export declare interface StrategyPlugin {
   fetchDidReceive?: (options: {
     request: Request;
     response: Response;
-  }) => Promise<Response>;
-
-  // Called after a response is stored in the cache, but before it's returned to the application.
-  // Can be used to modify the cached response, for example.
-  cachedResponseWillBeRead?: (options: {
-    cacheName: string;
-    request: Request;
-    matchOptions: CacheQueryMatchOptions;
-    cachedResponse: Response;
   }) => Promise<Response>;
 
   // Called after a fetch request is made and a response is received from the network, but before it's returned to the application.
