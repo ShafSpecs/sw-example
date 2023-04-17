@@ -9,10 +9,10 @@ export function isMethod(request: Request, methods: string[]): boolean {
 }
 
 
-export function isAssetRequest(request: Request, assets: string[] = ["/build/", "/icons"]): boolean {
+export function isAssetRequest(request: Request, assetUrls: string[] = ["/build/", "/icons"]): boolean {
   return (
     isMethod(request, ["get"]) &&
-    assets.some((publicPath) =>
+    assetUrls.some((publicPath) =>
       request.url.includes(publicPath)
     )
   );
@@ -36,6 +36,5 @@ export function toError(error: unknown): Error {
     return error;
   }
 
-  // return new Error(String(error));
   return error as Error;
 }
