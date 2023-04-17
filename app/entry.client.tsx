@@ -17,7 +17,7 @@ startTransition(() => {
 });
 
 loadServiceWorker({
-  serviceWorkerUrl: "/entry.worker.js"
+  serviceWorkerUrl: "/precache.worker.js"
 })
 
 // logger.log("🚀 Remix is running in development mode.");
