@@ -8,13 +8,10 @@ import {
   matchAssetRequest, 
   matchDocumentRequest, 
   matchLoaderRequest, 
-  remixLoaderPlugin 
-} from '~/remix-pwa-sw/workbox'
+  remixLoaderPlugin,
+  PrecacheHandler
+} from '@remix-pwa/sw'
 
-import { 
-  handlePush,
-  handleSyncRemixManifest
-} from '~/remix-pwa-sw'
 
 declare let self: ServiceWorkerGlobalScope;
 
@@ -22,6 +19,9 @@ const PAGES = "page-cache-v1";
 const DATA = "data-cache-v1";
 const ASSETS = "assets-cache-v1";
 const StaticAssets = ['/build/', '/icons/']
+
+
+const navigationHandler = new PrecacheHandler({ dataCacheName: DATA, documentCacheName: PAGES, assetCacheName: ASSETS })
 
 function debug(...messages: any[]) {
   if (process.env.NODE_ENV !== "production") {
@@ -99,14 +99,10 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 
-self.addEventListener("push", (event) => {
-  event.waitUntil(handlePush(event));
+self.addEventListener("message", (event) => {
+  event.waitUntil(navigationHandler.handle(event));
 });
 
-self.addEventListener("message", (event) => {
-  event.waitUntil(handleSyncRemixManifest(event, { 
-    dataCache: DATA, 
-    documentCache: PAGES,
-    assetCache: ASSETS
-  }));
-});
+// self.addEventListener("push", (event) => {
+//   event.waitUntil(handlePush(event));
+// });

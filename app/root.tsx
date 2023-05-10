@@ -8,7 +8,7 @@ import {
   ScrollRestoration,
   useCatch,
 } from "@remix-run/react";
-import { useSWEffect } from "~/remix-pwa-sw/react";
+import { useSWEffect } from "@remix-pwa/sw";
 
 import type { LinksFunction, MetaFunction } from "@remix-run/node";
 

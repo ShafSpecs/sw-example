@@ -2,11 +2,10 @@
 
 import {
   matchRequest,
-  handlePush,
   CacheFirst,
   NetworkFirst,
-  handleSyncRemixManifest
-} from "~/remix-pwa-sw";
+  PrecacheHandler
+} from "@remix-pwa/sw";
 
 declare let self: ServiceWorkerGlobalScope;
 
@@ -18,6 +17,10 @@ const StaticAssets = ["/build/", "/icons/"];
 const assetHandler = new CacheFirst({ cacheName: ASSETS });
 const pageHandler = new NetworkFirst({ cacheName: PAGES });
 const dataHandler = new NetworkFirst({ cacheName: DATA, isLoader: true });
+
+
+const navigationHandler = new PrecacheHandler({ dataCacheName: DATA, documentCacheName: PAGES, assetCacheName: ASSETS })
+
 
 const fetchHandler = async (event: FetchEvent): Promise<Response> => {
   const { request } = event;
@@ -45,16 +48,12 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("message", (event) => {
-  event.waitUntil(handleSyncRemixManifest(event, {
-    dataCache: DATA,
-    assetCache: ASSETS,
-    documentCache: PAGES
-  }));
+  event.waitUntil(navigationHandler.handle(event));
 });
 
-self.addEventListener("push", (event) => {
-  event.waitUntil(handlePush(event));
-});
+// self.addEventListener("push", (event) => {
+//   event.waitUntil(handlePush(event));
+// });
 
 self.addEventListener("fetch", (event) => {
   event.respondWith(fetchHandler(event));

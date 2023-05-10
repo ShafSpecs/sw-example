@@ -2,18 +2,20 @@
 
 import {
   matchRequest,
-  handlePush,
-  handleMessage,
   CacheFirst,
   NetworkFirst,
-} from "~/remix-pwa-sw";
+  RemixNavigationHandler
+} from "@remix-pwa/sw";
 
 declare let self: ServiceWorkerGlobalScope;
 
-const PAGES = "page-cache";
-const DATA = "data-cache";
-const ASSETS = "assets-cache";
+const PAGES = "page-cache-v1";
+const DATA = "data-cache-v1";
+const ASSETS = "assets-cache-v1";
 const StaticAssets = ["/build/", "/icons/"];
+
+
+const navigationHandler = new RemixNavigationHandler({ dataCacheName: DATA, documentCacheName: PAGES })
 
 const assetHandler = new CacheFirst({ cacheName: ASSETS });
 const pageHandler = new NetworkFirst({ cacheName: PAGES });
@@ -49,10 +51,10 @@ self.addEventListener("fetch", (event) => {
 
 self.addEventListener("message", (event) => {
   event.waitUntil(
-    handleMessage(event, { dataCache: DATA, documentCache: PAGES })
+    navigationHandler.handle(event)
   );
 });
 
-self.addEventListener("push", (event) => {
-  event.waitUntil(handlePush(event));
-});
+// self.addEventListener("push", (event) => {
+//   event.waitUntil(handlePush(event));
+// });
