@@ -18,8 +18,8 @@ const assetHandler = new CacheFirst({ cacheName: ASSETS });
 const pageHandler = new NetworkFirst({ cacheName: PAGES });
 const dataHandler = new NetworkFirst({ cacheName: DATA, isLoader: true });
 
-// @ts-ignore
-const navigationHandler = new PrecacheHandler({ state: { caches: { DATA_CACHE: DATA, DOCUMENT_CACHE: PAGES, ASSET_CACHE: StaticAssets }}})
+
+const navigationHandler = new PrecacheHandler({ dataCacheName: DATA, documentCacheName: PAGES, assetCacheName: ASSETS })
 
 
 const fetchHandler = async (event: FetchEvent): Promise<Response> => {

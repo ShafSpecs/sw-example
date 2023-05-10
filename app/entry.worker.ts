@@ -14,8 +14,8 @@ const DATA = "data-cache-v1";
 const ASSETS = "assets-cache-v1";
 const StaticAssets = ["/build/", "/icons/"];
 
-// @ts-ignore
-const navigationHandler = new RemixNavigationHandler({ state: { caches: { DATA, PAGES }}})
+
+const navigationHandler = new RemixNavigationHandler({ dataCacheName: DATA, documentCacheName: PAGES })
 
 const assetHandler = new CacheFirst({ cacheName: ASSETS });
 const pageHandler = new NetworkFirst({ cacheName: PAGES });

@@ -20,8 +20,8 @@ const DATA = "data-cache-v1";
 const ASSETS = "assets-cache-v1";
 const StaticAssets = ['/build/', '/icons/']
 
-// @ts-ignore
-const navigationHandler = new PrecacheHandler({ state: { caches: { DATA_CACHE: DATA, DOCUMENT_CACHE: PAGES, ASSET_CACHE: StaticAssets }}})
+
+const navigationHandler = new PrecacheHandler({ dataCacheName: DATA, documentCacheName: PAGES, assetCacheName: ASSETS })
 
 function debug(...messages: any[]) {
   if (process.env.NODE_ENV !== "production") {

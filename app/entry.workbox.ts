@@ -21,7 +21,7 @@ const ASSETS = "assets-cache-v1";
 const StaticAssets = ['/build/', '/icons/']
 
 // @ts-ignore
-const navigationHandler = new RemixNavigationHandler({ state: { caches: { DATA, PAGES }}})
+const navigationHandler = new RemixNavigationHandler({ dataCacheName: DATA, documentCacheName: PAGES })
 
 function debug(...messages: any[]) {
   if (process.env.NODE_ENV !== "production") {
